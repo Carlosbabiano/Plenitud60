@@ -895,7 +895,9 @@ function pintarGrid(){
     </div>`;
   }).join('');
 }
+let ultimoDetalle=null;
 function detalle(id){
+  ultimoDetalle=id;
   const ej=EJERCICIOS.find(e=>e.id===id);
   const done=hechosHoy().includes(id), conf=condConflicto(ej), faltaEq=faltaEquipo(ej), cv=CVAR[ej.cat];
   document.getElementById('detalle').innerHTML=`
@@ -1066,6 +1068,9 @@ function guardarPerfil(){
   if(p.peso){const pesos=getPesos(),ult=pesos.length?pesos[pesos.length-1].peso:null,v=parseFloat(p.peso.replace(',','.'));if(v&&(ult===null||Math.abs(ult-v)>=0.05))addPeso(v);}
   document.getElementById('guardadoMsg').classList.add('ver');
   actualizarAlertaPerfil();
+  // Refresca al momento todo lo que depende del perfil (equipo, condiciones, peso)
+  pintarGrid();pintarRutinas();pintarNutri();
+  if(ultimoDetalle && document.getElementById('p-detalle').classList.contains('activa')) detalle(ultimoDetalle);
   setTimeout(()=>toast('Perfil guardado'),50);
 }
 function actualizarAlertaPerfil(){

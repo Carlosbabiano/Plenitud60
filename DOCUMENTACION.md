@@ -126,6 +126,8 @@ en el catálogo/detalle se avisa con «🧰 Necesitas: …».
   no tienes banda, el remo desaparece de las rutinas (comportamiento predecible).
 - En el perfil, los equipos que tienes se marcan en verde con un **✓**; lo que dejes sin
   marcar se quita de las rutinas.
+- Al **guardar el perfil**, todas las vistas dependientes se refrescan al momento
+  (catálogo, rutinas, nutrición y el detalle abierto): el cambio se nota sin reabrir la app.
 - **Sustitución automática:** cuando un ejercicio se cae (por equipo o por una condición),
   la rutina **no se queda coja**: se sustituye por otro de la **misma categoría** y que
   comparta el máximo de músculos, si hay alguno disponible que no esté ya en la rutina. En
