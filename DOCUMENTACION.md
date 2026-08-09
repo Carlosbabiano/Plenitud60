@@ -81,6 +81,16 @@ pendiente. El aviso se reinicia cada semana (lunes).
 - Nota: además, siempre se puede lanzar cualquier rutina cualquier día desde
   «Todas las rutinas», y cambiar la rutina de un día tocándolo en el plan semanal.
 
+**5. La pantalla no se apaga durante los ejercicios (Wake Lock)**
+Mientras el reproductor está abierto (haciendo una rutina o un ejercicio), la app pide un
+bloqueo de pantalla para que el móvil **no se apague solo** sin tener que tocarlo. Se
+suelta al cerrar el reproductor, para no gastar batería el resto del tiempo. Si el móvil
+se bloquea y se vuelve a abrir, el bloqueo se recupera automáticamente.
+- Usa la Screen Wake Lock API (`navigator.wakeLock`). Soportada en Safari de iPhone
+  (iOS 16.4+) y en Android. Requiere HTTPS (Netlify lo cumple).
+- Código: `wakeLock`, `pedirWakeLock()`, `soltarWakeLock()`, el listener de
+  `visibilitychange`, y las llamadas en `arrancarPlayer()` / `pClose()`.
+
 ---
 
 ## Datos guardados en el teléfono (localStorage)

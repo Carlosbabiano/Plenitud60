@@ -924,9 +924,25 @@ function iniciarUno(id){
   RP={steps:[{ej,d:ej.tiempo||40}],i:0,t:ej.tiempo||40,timer:null,paused:false,titulo:ej.nombre,doneIds:[],phase:'intro'};
   arrancarPlayer();
 }
+/* ---- Mantener la pantalla encendida durante los ejercicios (Wake Lock) ----
+   Soportado en Safari de iPhone (iOS 16.4+) y Android. Se pide al abrir el
+   reproductor y se suelta al cerrarlo, para no gastar batería el resto del tiempo. */
+let wakeLock=null;
+async function pedirWakeLock(){
+  try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){}
+}
+async function soltarWakeLock(){
+  try{ if(wakeLock){ await wakeLock.release(); } }catch(e){} wakeLock=null;
+}
+/* Si el móvil se bloquea y se vuelve a abrir, el sistema suelta el bloqueo: lo recuperamos */
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && !wakeLock && document.getElementById('player').classList.contains('on')) pedirWakeLock();
+});
+
 function arrancarPlayer(){
   try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}
   document.getElementById('player').classList.add('on');
+  pedirWakeLock();
   irAPaso(0);
 }
 /* Va al ejercicio i y muestra su pantalla de explicación (self-paced, sin contador) */
@@ -1028,7 +1044,7 @@ function pFinish(){
     <button class="bp" onclick="pClose();go('progreso')">Ver mi progreso</button>
     <div class="prow"><button onclick="pClose()">Cerrar</button></div></div>`;
 }
-function pClose(){clearInterval(RP.timer);document.getElementById('player').classList.remove('on');pintarRutinas();pintarGrid();}
+function pClose(){clearInterval(RP.timer);soltarWakeLock();document.getElementById('player').classList.remove('on');pintarRutinas();pintarGrid();}
 
 /* ==================== NAV ==================== */
 function mostrar(p){document.querySelectorAll('.pantalla').forEach(x=>x.classList.remove('activa'));document.getElementById('p-'+p).classList.add('activa');window.scrollTo(0,0);}
