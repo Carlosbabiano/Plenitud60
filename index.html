@@ -196,6 +196,19 @@
   .lic{font-size:26px;line-height:1;flex:0 0 auto;}
   .ln{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.2;}
   .ld{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  /* peso */
+  .peso{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);}
+  .peso-vacio{font-size:14.5px;color:var(--muted);margin-bottom:12px;}
+  .peso-actual{font-size:34px;font-weight:800;color:var(--primary);line-height:1;}
+  .peso-actual span{font-size:18px;font-weight:700;color:var(--muted);}
+  .peso-diff{font-size:14px;font-weight:700;color:var(--muted);margin-top:6px;}
+  .peso-diff.baja{color:var(--flex);}
+  .peso-diff.sube{color:var(--fuerza);}
+  .peso-svg{width:100%;height:auto;margin:12px 0 4px;display:block;}
+  .peso-nota{font-size:13px;color:var(--muted);margin:10px 0;}
+  .peso-add{display:flex;gap:8px;margin-top:12px;}
+  .peso-add input{flex:1;min-width:0;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;background:#fff;}
+  .peso-add button{flex:0 0 auto;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-weight:700;font-size:15px;cursor:pointer;}
 
   /* nutrición */
   .lead{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);font-size:15px;color:var(--muted);}
@@ -363,6 +376,8 @@
     <div id="grafica"></div>
     <h2 class="sec">Logros</h2>
     <div id="logros"></div>
+    <h2 class="sec">Mi peso</h2>
+    <div id="pesoCard"></div>
     <h2 class="sec">Actividad reciente</h2>
     <div id="historial"></div>
   </div>
@@ -747,6 +762,22 @@ function faltaEquipo(ej){
 /* Un ejercicio no está disponible si choca con una condición o falta el equipo. */
 function noDisponible(ej){return condConflicto(ej).length>0 || faltaEquipo(ej).length>0;}
 
+/* ---- Histórico de peso (para ver la evolución) ---- */
+const KEY_PESO='plenitud60_pesos';
+function getPesos(){try{const a=JSON.parse(localStorage.getItem(KEY_PESO));return Array.isArray(a)?a:[];}catch(e){return[];}}
+function setPesos(a){localStorage.setItem(KEY_PESO,JSON.stringify(a));}
+function addPeso(valor,fecha){
+  const v=parseFloat(String(valor).replace(',','.'));
+  if(!v||v<25||v>300) return false;
+  const kg=Math.round(v*10)/10, f=fecha?new Date(fecha):new Date(), dia=f.toDateString();
+  const a=getPesos().filter(x=>new Date(x.fecha).toDateString()!==dia); // un registro por día
+  a.push({fecha:f.toISOString(),peso:kg});
+  a.sort((x,y)=>new Date(x.fecha)-new Date(y.fecha));
+  setPesos(a);
+  const p=getPerfil(); p.peso=String(kg); setPerfil(p); // sincroniza el peso del perfil (IMC/proteína)
+  return true;
+}
+
 /* ==================== RUTINAS ==================== */
 const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const DIAS_CORTOS=['L','M','X','J','V','S','D'];
@@ -949,7 +980,7 @@ function pintarProgreso(){
     const dias=diasUnicos(semana.filter(x=>x.cat===m.cat)),pct=Math.min(100,Math.round(dias/m.obj*100)),ok=dias>=m.obj;
     return `<div class="goal ${m.cat} ${ok?'ok':''}"><div class="top"><span class="name">${m.n}</span><span class="count">${dias} / ${m.obj} días</span></div><div class="bar"><i style="width:${pct}%"></i></div><div class="rec">${m.rec}</div></div>`;
   }).join('');
-  pintarMotiva(h);pintarGrafica(h);pintarLogros(h);
+  pintarMotiva(h);pintarGrafica(h);pintarLogros(h);pintarPeso();
   const cont=document.getElementById('historial');
   if(!h.length){cont.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="#0f5f57" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-6"/></svg><div>Aún no hay actividad registrada.<br>Empieza por tu primera rutina de hoy.</div></div>`;return;}
   const dias={};h.slice().reverse().forEach(x=>{const k=new Date(x.fecha).toDateString();(dias[k]=dias[k]||[]).push(x);});
@@ -961,6 +992,41 @@ function pintarProgreso(){
   }).join('')+`<button class="link-borrar" onclick="borrarTodo()">Borrar todo el historial</button>`;
 }
 function calcularRacha(h){if(!h.length)return 0;const set=new Set(h.map(x=>new Date(x.fecha).toDateString()));let r=0;const d=new Date();if(!set.has(d.toDateString()))d.setDate(d.getDate()-1);while(set.has(d.toDateString())){r++;d.setDate(d.getDate()-1);}return r;}
+
+/* --- Registro y evolución del peso --- */
+function fmtKg(n){return n.toFixed(1).replace('.',',');}
+function graficaPeso(a){
+  const datos=a.slice(-12);
+  if(datos.length<2) return '<div class="peso-nota">Apunta tu peso otro día y aquí verás la línea de evolución.</div>';
+  const W=300,H=110,pad=16;
+  const pesos=datos.map(d=>d.peso), min=Math.min(...pesos), max=Math.max(...pesos), rango=(max-min)||1;
+  const x=i=>pad+i*(W-2*pad)/(datos.length-1), y=p=>pad+(1-(p-min)/rango)*(H-2*pad);
+  const pts=datos.map((d,i)=>`${x(i).toFixed(1)},${y(d.peso).toFixed(1)}`).join(' ');
+  const circ=datos.map((d,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(d.peso).toFixed(1)}" r="3.2" fill="var(--primary)"/>`).join('');
+  return `<svg class="peso-svg" viewBox="0 0 ${W} ${H}"><polyline points="${pts}" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${circ}</svg>`;
+}
+function pintarPeso(){
+  const box=document.getElementById('pesoCard'); if(!box)return;
+  const a=getPesos();
+  const input=`<div class="peso-add"><input id="inPesoHoy" type="number" inputmode="decimal" step="0.1" placeholder="Tu peso hoy (kg)"><button onclick="registrarPeso()">Apuntar</button></div>`;
+  if(!a.length){
+    box.innerHTML=`<div class="peso"><div class="peso-vacio">Apunta tu peso de vez en cuando (por ejemplo, una vez por semana) y verás aquí tu evolución.</div>${input}</div>`;
+    return;
+  }
+  const actual=a[a.length-1].peso, inicial=a[0].peso, diff=Math.round((actual-inicial)*10)/10;
+  const flecha=diff<0?'↓':(diff>0?'↑':'→'), signo=diff>0?'+':'';
+  const difTxt=(a.length>1)?`<div class="peso-diff ${diff<0?'baja':(diff>0?'sube':'')}">${flecha} ${signo}${fmtKg(diff)} kg desde el inicio</div>`:`<div class="peso-diff">Tu primer registro</div>`;
+  box.innerHTML=`<div class="peso">
+    <div class="peso-actual">${fmtKg(actual)} <span>kg</span></div>${difTxt}
+    ${graficaPeso(a)}
+    ${input}
+  </div>`;
+}
+function registrarPeso(){
+  const inp=document.getElementById('inPesoHoy'); if(!inp)return;
+  if(addPeso(inp.value)){inp.value='';toast('Peso registrado ✓');pintarProgreso();}
+  else{toast('Escribe un peso válido (kg)');}
+}
 function borrarTodo(){if(confirm('¿Seguro que quieres borrar todo el historial? No se puede deshacer.')){saveH([]);pintarProgreso();pintarGrid();}}
 
 /* ==================== NUTRICIÓN ==================== */
@@ -994,6 +1060,8 @@ function guardarPerfil(){
   const equipo=[...document.querySelectorAll('#equipoBox .equip.on')].map(b=>b.dataset.k);
   const p={altura:document.getElementById('inAltura').value.trim(),peso:document.getElementById('inPeso').value.trim(),condiciones,equipo};
   setPerfil(p);
+  // Si el peso es nuevo o ha cambiado, lo apuntamos en el histórico de peso.
+  if(p.peso){const pesos=getPesos(),ult=pesos.length?pesos[pesos.length-1].peso:null,v=parseFloat(p.peso.replace(',','.'));if(v&&(ult===null||Math.abs(ult-v)>=0.05))addPeso(v);}
   document.getElementById('guardadoMsg').classList.add('ver');
   actualizarAlertaPerfil();
   setTimeout(()=>toast('Perfil guardado'),50);

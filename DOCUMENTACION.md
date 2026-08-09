@@ -162,6 +162,16 @@ registra esa actividad en Salud (energía activa, que además suma al anillo de 
   6. (Opcional) **«Mostrar notificación»**: «Sesión guardada en Salud».
   La primera vez, iOS pedirá permiso para escribir en Salud.
 
+**12. Registro y evolución del peso**
+En la pestaña **Progreso** hay una sección **«Mi peso»** para apuntar el peso cada cierto
+tiempo y ver la evolución: peso actual, variación desde el primer registro (baja en verde,
+sube en naranja) y una **gráfica de línea** con los últimos registros.
+- Se guarda un registro por día (`plenitud60_pesos`); volver a apuntar el mismo día
+  sustituye el valor. El último peso se sincroniza con el perfil, así la calculadora de
+  proteína/IMC usa siempre el peso más reciente. Guardar el peso en el perfil también lo
+  añade al histórico.
+- Código: `getPesos()`, `addPeso()`, `pintarPeso()`, `graficaPeso()`, `registrarPeso()`.
+
 ---
 
 ## Datos guardados en el teléfono (localStorage)
@@ -173,6 +183,7 @@ registra esa actividad en Salud (energía activa, que además suma al anillo de 
 | `plenitud60_plan` | Rutina asignada a cada día de la semana. |
 | `plenitud60_recuperados` | Días de esta semana ya recuperados. |
 | `plenitud60_sesion` | Sesión de ejercicio en curso (para reanudar si se cierra la app). |
+| `plenitud60_pesos` | Histórico de peso (para ver la evolución). |
 | `plenitud60_voz` | Si la voz que anuncia los ejercicios está activada. |
 
 ---
