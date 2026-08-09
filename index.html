@@ -261,6 +261,7 @@
   .player .ptime{font-size:64px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px;margin:4px 0 2px;line-height:1;}
   .player .pguide{color:var(--muted);font-size:14.5px;margin-bottom:16px;min-height:20px;}
   .player .bp{display:block;width:100%;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:750;cursor:pointer;color:#fff;background:var(--primary);margin-bottom:10px;}
+  .player .bp.salud{background:#e0245e;text-decoration:none;box-sizing:border-box;}
   .player .prow{display:flex;gap:10px;}
   .player .prow button{flex:1;border-radius:14px;padding:14px;font-size:14.5px;font-weight:700;cursor:pointer;background:#fff;border:1.5px solid var(--line);color:var(--ink);}
   .player.rest .pfig{opacity:.55;}
@@ -1220,14 +1221,25 @@ function pRenderRun(){
       <div class="pguide">${ej.pasos[0]}</div>
       ${botones}</div>`;
 }
+/* ¿Es un iPhone/iPad? (el enlace a Atajos solo tiene sentido ahí) */
+function esIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+/* Enlace que ejecuta el atajo "Plenitud Salud" pasándole los datos de la sesión. */
+function urlSalud(tipo,minutos,kcal){
+  const datos=JSON.stringify({tipo,minutos,kcal});
+  return 'shortcuts://run-shortcut?name='+encodeURIComponent('Plenitud Salud')+'&input=text&text='+encodeURIComponent(datos);
+}
 function pFinish(){
   clearInterval(RP.timer);borrarSesion();
   const done=[...RP.doneIds];
   done.forEach(id=>{const ej=EJERCICIOS.find(e=>e.id===id);registrar(ej);});
+  const seg=RP.steps.reduce((s,p)=>s+(p.d||0),0), minutos=Math.max(1,Math.round(seg/60));
+  const peso=parseFloat(getPerfil().peso)||70, kcal=Math.round(minutos*peso*0.06);
+  const btnSalud=esIOS()?`<a class="bp salud" href="${urlSalud(RP.titulo,minutos,kcal)}">❤️ Guardar en Salud</a>`:'';
   const el=document.getElementById('player');el.classList.remove('rest');
   el.innerHTML=`<div class="pbody" style="margin:auto;text-align:center">
     <div style="font-size:64px">🎉</div><h2 style="font-size:26px">¡Sesión completada!</h2>
-    <p class="pguide" style="font-size:16px">Has realizado <b>${done.length}</b> ejercicio${done.length!==1?'s':''}. ¡Buen trabajo!</p>
+    <p class="pguide" style="font-size:16px">Has realizado <b>${done.length}</b> ejercicio${done.length!==1?'s':''} · ~${minutos} min. ¡Buen trabajo!</p>
+    ${btnSalud}
     <button class="bp" onclick="pClose();go('progreso')">Ver mi progreso</button>
     <div class="prow"><button onclick="pClose()">Cerrar</button></div></div>`;
 }

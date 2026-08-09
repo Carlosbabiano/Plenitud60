@@ -141,6 +141,27 @@ estadísticas y los objetivos OMS:
 - Código: `pintarMotiva()`, `pintarGrafica()`, `pintarLogros()`, `LOGROS`, y auxiliares
   `lunesDe()`, `diasActivosEntre()`, `mejorRacha()`, `semanaCompleta()`.
 
+**11. Guardar las sesiones en la app Salud del iPhone (vía Atajos)**
+Al terminar una rutina, en un iPhone aparece el botón **«❤️ Guardar en Salud»**. Como la
+app Salud (HealthKit) no es accesible desde una web, se usa un **puente con la app Atajos**:
+el botón abre un atajo llamado **`Plenitud Salud`** (que el usuario crea una vez) y le pasa
+los datos de la sesión (tipo de rutina, minutos y calorías estimadas) en JSON. El atajo
+registra esa actividad en Salud (energía activa, que además suma al anillo de Movimiento).
+- Las calorías son una **estimación**: `minutos × peso × 0,06` (el peso, del perfil; 70 kg
+  por defecto). Los minutos son la duración prevista de la rutina.
+- El botón solo se muestra en iPhone/iPad (`esIOS()`); en otros dispositivos no aparece.
+- Código: `esIOS()`, `urlSalud()` y el botón en `pFinish()`.
+- **Cómo crear el atajo `Plenitud Salud`** (una sola vez, en el iPhone):
+  1. App **Atajos** → **+** → ponle de nombre exactamente **Plenitud Salud**.
+  2. Actívalo para que reciba entrada (al recibir la orden desde la app, la «Entrada del
+     atajo» será un texto JSON).
+  3. Acción **«Obtener diccionario de la entrada»**.
+  4. Acción **«Obtener valor del diccionario»** con la clave `kcal`.
+  5. Acción **«Registrar muestra de salud»** → tipo **Energía activa** → valor: el resultado
+     anterior → fecha: la actual.
+  6. (Opcional) **«Mostrar notificación»**: «Sesión guardada en Salud».
+  La primera vez, iOS pedirá permiso para escribir en Salud.
+
 ---
 
 ## Datos guardados en el teléfono (localStorage)
