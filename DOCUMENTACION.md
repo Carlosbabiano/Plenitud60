@@ -121,8 +121,11 @@ En el perfil, además de altura/peso/condiciones, se elige **con qué equipo se 
 (pesas o botellas de agua, banda elástica, bicicleta). Las rutinas **dejan fuera los
 ejercicios que necesiten algo que no se tiene** (igual que con las condiciones médicas), y
 en el catálogo/detalle se avisa con «🧰 Necesitas: …».
-- Cada ejercicio pide «al menos uno» de su lista de equipo (`EQUIPO_EJ`). Por ejemplo, el
-  remo vale con banda **o** con botellas de agua; el curl y el press valen con botellas.
+- Cada ejercicio pide su equipo (`EQUIPO_EJ`): el **remo** necesita **banda elástica**; el
+  **curl** y el **press**, pesas o botellas de agua; la **bici**, bicicleta. Si marcas que
+  no tienes banda, el remo desaparece de las rutinas (comportamiento predecible).
+- En el perfil, los equipos que tienes se marcan en verde con un **✓**; lo que dejes sin
+  marcar se quita de las rutinas.
 - Si el perfil **aún no** tiene el equipo configurado, se asume que se tiene todo (para no
   vaciar las rutinas). En la pantalla de perfil, por eso, los equipos salen marcados por
   defecto: basta con **desmarcar** lo que no se tenga.

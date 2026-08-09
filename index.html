@@ -241,6 +241,7 @@
   .cond.on{background:var(--cardio-l);border-color:var(--cardio);color:var(--cardio);}
   .equip{border:1.5px solid var(--line);background:#fff;color:var(--muted);padding:9px 14px;border-radius:22px;font-size:14px;font-weight:600;cursor:pointer;}
   .equip.on{background:var(--flex-l);border-color:var(--flex);color:#256b31;}
+  .equip.on::before{content:"✓ ";font-weight:800;}
   .caution.equipo{color:var(--fuerza);}
   .warnbox.equipo{background:var(--fuerza-l);border:1px solid var(--fuerza);color:#7a4a08;}
   .warnbox.equipo b{color:#5f3a06;}
@@ -420,7 +421,7 @@
     <div class="field">
       <label>¿Con qué equipo cuentas?</label>
       <div class="conds" id="equipoBox"></div>
-      <div class="hint">Marca lo que tengas; dejaremos fuera de las rutinas los ejercicios que necesiten algo que no tienes. Muchos ejercicios de fuerza se pueden hacer con <b>botellas de agua llenas</b>.</div>
+      <div class="hint">Marca el equipo que <b>sí</b> tengas (quedan en verde con ✓). Lo que dejes <b>sin marcar</b> se quitará de las rutinas. Muchos ejercicios de fuerza se pueden hacer con <b>botellas de agua llenas</b>.</div>
     </div>
     <button class="btn" onclick="guardarPerfil()">Guardar perfil</button>
     <div class="guardado" id="guardadoMsg">✓ Perfil guardado</div>
@@ -614,7 +615,7 @@ const EQUIPOS=[
   {k:'bici',n:'Bicicleta'}
 ];
 const EQUIPO_NOMBRE={pesas:'pesas o botellas de agua',banda:'banda elástica',bici:'bicicleta'};
-const EQUIPO_EJ={remo:['banda','pesas'],curl:['pesas'],press:['pesas'],bici:['bici']};
+const EQUIPO_EJ={remo:['banda'],curl:['pesas'],press:['pesas'],bici:['bici']};
 
 const EJERCICIOS=[
   {id:'sentadilla',cat:'fuerza',nombre:'Sentadillas',fig:'sentadilla',anim:true,dosis:'2–3 series · 10–12 rep',tiempo:45,contra:['rodilla','cadera'],
