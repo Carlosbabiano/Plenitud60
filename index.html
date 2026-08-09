@@ -285,6 +285,7 @@
   .player .pfig-sm svg{width:148px;height:180px;}
   .player .pfig-sm .foto{height:172px;width:auto;max-width:90%;}
   .player .pdosis{display:inline-block;background:var(--primary-l);color:var(--primary-d);font-weight:700;font-size:15px;padding:6px 15px;border-radius:20px;margin:4px 0 16px;}
+  .player .psust{font-size:13px;color:var(--fuerza);font-weight:650;margin:4px auto 6px;max-width:440px;}
   .player .psteps{list-style:none;padding:0;margin:0 auto 14px;counter-reset:s;text-align:left;max-width:440px;}
   .player .psteps li{position:relative;padding:2px 0 15px 40px;font-size:16.5px;line-height:1.45;color:var(--ink);}
   .player .psteps li:before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
@@ -852,11 +853,11 @@ function pintarRutinas(){
   }).join('');
 
   document.getElementById('listaRutinas').innerHTML=ROUTINES.map(r=>{
-    const quitados=r.pasos.filter(p=>noDisponible(EJERCICIOS.find(e=>e.id===p.id))).length;
+    const {steps,quitados,sustituidos}=construirPasos(r), adaptados=quitados+sustituidos;
     return `<div class="rut" onclick="iniciarRutina('${r.id}')">
       <div class="ricon" style="background:${r.bg}">${r.icono}</div>
-      <div class="rinfo"><h3>${r.nombre}</h3><div class="rmeta">${r.desc} · ~${rutMins(r)} min · ${r.pasos.length-quitados} ejercicios</div>
-        ${quitados?`<div class="rnota">⚠ ${quitados} adaptado${quitados>1?'s':''} a tu perfil</div>`:''}</div>
+      <div class="rinfo"><h3>${r.nombre}</h3><div class="rmeta">${r.desc} · ~${rutMins(r)} min · ${steps.length} ejercicios</div>
+        ${adaptados?`<div class="rnota">⚠ ${adaptados} adaptado${adaptados>1?'s':''} a tu perfil</div>`:''}</div>
       <svg class="rgo" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
     </div>`;
   }).join('');
@@ -1108,7 +1109,7 @@ function guardarSesion(){
   try{
     if(!RP.steps||!RP.steps.length)return;
     localStorage.setItem(KEY_SESION,JSON.stringify({
-      titulo:RP.titulo, pasos:RP.steps.map(p=>({id:p.ej.id,d:p.d})),
+      titulo:RP.titulo, pasos:RP.steps.map(p=>({id:p.ej.id,d:p.d,sustituyeA:p.sustituyeA||null})),
       i:RP.i, phase:RP.phase, t:RP.t, serie:RP.serie, seriesTotal:RP.seriesTotal,
       lado:RP.lado, doneIds:RP.doneIds, paused:RP.paused
     }));
@@ -1118,7 +1119,7 @@ function cargarSesion(){try{return JSON.parse(localStorage.getItem(KEY_SESION));
 function borrarSesion(){try{localStorage.removeItem(KEY_SESION);}catch(e){}}
 function reanudarSesion(){
   const s=cargarSesion(); if(!s||!s.pasos||!s.pasos.length)return;
-  const steps=s.pasos.map(p=>({ej:EJERCICIOS.find(e=>e.id===p.id),d:p.d})).filter(x=>x.ej);
+  const steps=s.pasos.map(p=>({ej:EJERCICIOS.find(e=>e.id===p.id),d:p.d,sustituyeA:p.sustituyeA||null})).filter(x=>x.ej);
   if(!steps.length){borrarSesion();pintarRutinas();return;}
   RP={steps, i:Math.min(s.i||0,steps.length-1), t:s.t||steps[0].d, timer:null, paused:!!s.paused,
       titulo:s.titulo||'Sesión', doneIds:s.doneIds||[], phase:s.phase==='run'?'run':'intro',
@@ -1143,22 +1144,38 @@ function anunciarActual(){const st=RP.steps[RP.i];if(!st)return;if(RP.phase==='i
 function toggleVoz(){voiceOn=!voiceOn;localStorage.setItem('plenitud60_voz',voiceOn?'1':'0');const b=document.getElementById('vozBtn');if(b)b.textContent=voiceOn?'🔊':'🔇';if(voiceOn)anunciarActual();else if('speechSynthesis'in window)speechSynthesis.cancel();}
 function pHead(right){return `<div class="phead"><button class="x" onclick="pClose()">✕</button><div class="pbar"><i style="width:${Math.round(RP.i/RP.steps.length*100)}%"></i></div><button class="vz" id="vozBtn" onclick="toggleVoz()" title="Voz">${voiceOn?'🔊':'🔇'}</button><span class="pstep">${right}</span></div>`;}
 
+/* Busca un ejercicio disponible que sustituya a `ej`: misma categoría, no excluido,
+   y priorizando el que más músculos comparta con el original. */
+function buscarSustituto(ej,excluidos){
+  const musOrig=new Set(MUSCULOS_EJ[ej.id]||[]);
+  const solape=c=>{const m=MUSCULOS_EJ[c.id]||[];return m.filter(x=>musOrig.has(x)).length;};
+  const cands=EJERCICIOS.filter(c=>c.cat===ej.cat && !excluidos.has(c.id) && !noDisponible(c));
+  if(!cands.length) return null;
+  cands.sort((a,b)=>solape(b)-solape(a));
+  return cands[0];
+}
 function construirPasos(rut){
-  const steps=[];let quitados=0;
+  const steps=[];let quitados=0,sustituidos=0;
+  const idsRutina=new Set(rut.pasos.map(p=>p.id)), usadosSust=new Set();
   rut.pasos.forEach(p=>{
-    const ej=EJERCICIOS.find(e=>e.id===p.id);
-    if(noDisponible(ej)){quitados++;return;}
-    steps.push({ej,d:p.d});
+    let ej=EJERCICIOS.find(e=>e.id===p.id), sustituyeA=null;
+    if(noDisponible(ej)){
+      const rep=buscarSustituto(ej,new Set([...idsRutina,...usadosSust]));
+      if(rep){sustituyeA=ej.nombre;ej=rep;usadosSust.add(rep.id);sustituidos++;}
+      else{quitados++;return;}
+    }
+    steps.push({ej,d:p.d,sustituyeA});
   });
-  return {steps,quitados};
+  return {steps,quitados,sustituidos};
 }
 function iniciarRutina(id){
   const rut=ROUTINES.find(r=>r.id===id);
-  const {steps,quitados}=construirPasos(rut);
+  const {steps,quitados,sustituidos}=construirPasos(rut);
   if(!steps.length){alert('Todos los ejercicios de esta rutina están desaconsejados por tu perfil. Prueba otra o revisa tu perfil.');return;}
   RP={steps,i:0,t:steps[0].d,timer:null,paused:false,titulo:rut.nombre,doneIds:[],phase:'intro'};
   arrancarPlayer();
-  if(quitados) setTimeout(()=>toast(quitados+' ejercicio(s) adaptados a tu perfil'),400);
+  const adaptados=quitados+sustituidos;
+  if(adaptados) setTimeout(()=>toast('Rutina adaptada a tu perfil y equipo'),400);
 }
 function iniciarUno(id){
   const ej=EJERCICIOS.find(e=>e.id===id);
@@ -1237,7 +1254,7 @@ function pDone(markDone){
 function pPause(){RP.paused=!RP.paused;pRenderRun();guardarSesion();}
 /* Pantalla de explicación previa a cada ejercicio (con botón Empezar) */
 function pRenderIntro(){
-  const el=document.getElementById('player'), ej=RP.steps[RP.i].ej, cv=CVAR[ej.cat];
+  const el=document.getElementById('player'), st=RP.steps[RP.i], ej=st.ej, cv=CVAR[ej.cat];
   el.classList.remove('rest');
   const conf=condConflicto(ej);
   el.innerHTML=`
@@ -1246,6 +1263,7 @@ function pRenderIntro(){
       <div class="pfig-sm" style="background:${tieneFoto(ej)?'#fff':`var(--${cv}-l)`}">${visual(ej,true)}</div>
       <div class="pkind" style="color:var(--${cv})">${CATS[ej.cat].n}</div>
       <h2>${ej.nombre}</h2>
+      ${st.sustituyeA?`<div class="psust">🔄 Sustituye a «${st.sustituyeA}» (no disponible con tu equipo)</div>`:''}
       <div class="pdosis">🎯 ${ej.dosis}</div>
       <ol class="psteps">${ej.pasos.map(p=>`<li>${p}</li>`).join('')}</ol>
       ${conf.length?`<div class="pwarn"><b>⚠️ Con cuidado</b> por tu perfil (${conf.map(k=>NOMBRE_COND[k]).join(', ')}).</div>`:''}
