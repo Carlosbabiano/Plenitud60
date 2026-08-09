@@ -92,3 +92,29 @@ pendiente. El aviso se reinicia cada semana (lunes).
 | `plenitud60_plan` | Rutina asignada a cada día de la semana. |
 | `plenitud60_recuperados` | Días de esta semana ya recuperados. |
 | `plenitud60_voz` | Si la voz que anuncia los ejercicios está activada. |
+
+---
+
+## Despliegue (GitHub → Netlify)
+
+- **Repositorio de GitHub:** https://github.com/Carlosbabiano/Plenitud60
+- **Hosting:** Netlify (despliega automáticamente cada vez que se sube un cambio al
+  repositorio).
+
+### Cómo subir cambios nuevos
+Desde la carpeta del proyecto, tras editar los ficheros:
+
+```bash
+git add -A
+git commit -m "Descripción del cambio"
+git push
+```
+
+Al hacer `push`, Netlify detecta el cambio y vuelve a publicar la web en unos segundos.
+La primera vez, GitHub pide iniciar sesión a través de Git Credential Manager; después
+queda recordado.
+
+### Primera conexión con Netlify (solo una vez)
+En Netlify: **Add new site → Import an existing project → GitHub →** elegir el
+repositorio `Plenitud60`. Dejar el directorio de publicación en la raíz (no hay que
+compilar nada, es HTML plano).
