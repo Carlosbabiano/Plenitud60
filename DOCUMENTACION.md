@@ -116,6 +116,31 @@ pantalla de Rutinas un aviso **«▶ Sesión sin terminar»** con botones **Rean
 - Código: `guardarSesion()`, `cargarSesion()`, `borrarSesion()`, `reanudarSesion()`,
   `descartarSesion()`, y el bloque `#reanudarCard` en `pintarRutinas()`.
 
+**9. Equipo disponible en el perfil**
+En el perfil, además de altura/peso/condiciones, se elige **con qué equipo se cuenta**
+(pesas o botellas de agua, banda elástica, bicicleta). Las rutinas **dejan fuera los
+ejercicios que necesiten algo que no se tiene** (igual que con las condiciones médicas), y
+en el catálogo/detalle se avisa con «🧰 Necesitas: …».
+- Cada ejercicio pide «al menos uno» de su lista de equipo (`EQUIPO_EJ`). Por ejemplo, el
+  remo vale con banda **o** con botellas de agua; el curl y el press valen con botellas.
+- Si el perfil **aún no** tiene el equipo configurado, se asume que se tiene todo (para no
+  vaciar las rutinas). En la pantalla de perfil, por eso, los equipos salen marcados por
+  defecto: basta con **desmarcar** lo que no se tenga.
+- Código: `EQUIPOS`, `EQUIPO_EJ`, `EQUIPO_NOMBRE`, `faltaEquipo()`, `noDisponible()`
+  (combina condiciones + equipo), y el bloque de equipo en el perfil.
+
+**10. Progreso motivador (pestaña Progreso)**
+Para animar a seguir cada semana, la pestaña Progreso ahora muestra, además de las
+estadísticas y los objetivos OMS:
+- Una **cabecera con un mensaje de ánimo** que cambia según los días que llevas esta
+  semana y tu racha.
+- Una **gráfica de las últimas 8 semanas** (días que te moviste cada semana, la actual
+  destacada) para ver la evolución.
+- **Logros / medallas** desbloqueables (primera sesión, rachas, 10/25/50 días, «semana
+  redonda» con los 4 pilares).
+- Código: `pintarMotiva()`, `pintarGrafica()`, `pintarLogros()`, `LOGROS`, y auxiliares
+  `lunesDe()`, `diasActivosEntre()`, `mejorRacha()`, `semanaCompleta()`.
+
 ---
 
 ## Datos guardados en el teléfono (localStorage)
@@ -123,7 +148,7 @@ pantalla de Rutinas un aviso **«▶ Sesión sin terminar»** con botones **Rean
 | Clave | Contenido |
 |-------|-----------|
 | `plenitud60_historial` | Ejercicios realizados (con fecha). |
-| `plenitud60_perfil` | Altura, peso y condiciones. |
+| `plenitud60_perfil` | Altura, peso, condiciones y equipo disponible. |
 | `plenitud60_plan` | Rutina asignada a cada día de la semana. |
 | `plenitud60_recuperados` | Días de esta semana ya recuperados. |
 | `plenitud60_sesion` | Sesión de ejercicio en curso (para reanudar si se cierra la app). |

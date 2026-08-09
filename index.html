@@ -174,6 +174,28 @@
   .empty{text-align:center;color:var(--muted);padding:46px 20px;}
   .empty svg{width:64px;height:64px;opacity:.3;margin-bottom:12px;}
   .link-borrar{background:none;border:none;color:#b02a37;font-size:13.5px;font-weight:600;cursor:pointer;padding:8px;display:block;margin:6px auto 0;}
+  /* progreso motivador */
+  .motiva{display:flex;gap:14px;align-items:center;background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .motiva-emo{font-size:38px;line-height:1;flex:0 0 auto;}
+  .motiva-msg{font-size:15.5px;font-weight:600;line-height:1.4;}
+  .motiva-racha{margin-top:6px;font-size:13px;font-weight:700;background:rgba(255,255,255,.16);display:inline-block;padding:4px 10px;border-radius:20px;}
+  .grafica{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 14px 12px;box-shadow:var(--shadow-sm);}
+  .gcols{display:flex;align-items:flex-end;gap:6px;height:128px;}
+  .gcol{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;}
+  .gbar-wrap{flex:1;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;}
+  .gval{font-size:12px;font-weight:700;color:var(--muted);}
+  .gbar{width:64%;max-width:26px;min-height:3px;background:var(--primary-l);border:1px solid #cfe4df;border-radius:6px 6px 0 0;transition:height .5s;}
+  .gbar.now{background:var(--primary);border-color:var(--primary);}
+  .glab{font-size:11px;color:var(--muted);margin-top:6px;font-weight:600;}
+  .gnota{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;}
+  .logros-top{font-size:13px;color:var(--muted);font-weight:600;margin:0 2px 10px;}
+  .logros{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(min-width:520px){.logros{grid-template-columns:1fr 1fr 1fr;}}
+  .logro{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;box-shadow:var(--shadow-sm);opacity:.55;}
+  .logro.ok{opacity:1;border-color:var(--primary);background:var(--primary-l);}
+  .lic{font-size:26px;line-height:1;flex:0 0 auto;}
+  .ln{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.2;}
+  .ld{font-size:11.5px;color:var(--muted);margin-top:2px;}
 
   /* nutrición */
   .lead{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);font-size:15px;color:var(--muted);}
@@ -204,6 +226,11 @@
   .conds{display:flex;flex-wrap:wrap;gap:8px;}
   .cond{border:1.5px solid var(--line);background:#fff;color:var(--muted);padding:9px 14px;border-radius:22px;font-size:14px;font-weight:600;cursor:pointer;}
   .cond.on{background:var(--cardio-l);border-color:var(--cardio);color:var(--cardio);}
+  .equip{border:1.5px solid var(--line);background:#fff;color:var(--muted);padding:9px 14px;border-radius:22px;font-size:14px;font-weight:600;cursor:pointer;}
+  .equip.on{background:var(--flex-l);border-color:var(--flex);color:#256b31;}
+  .caution.equipo{color:var(--fuerza);}
+  .warnbox.equipo{background:var(--fuerza-l);border:1px solid var(--fuerza);color:#7a4a08;}
+  .warnbox.equipo b{color:#5f3a06;}
   .guardado{background:var(--flex-l);color:#256b31;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;text-align:center;margin-top:8px;display:none;}
   .guardado.ver{display:block;}
 
@@ -323,6 +350,7 @@
 <!-- ===== PROGRESO ===== -->
 <div class="pantalla" id="p-progreso">
   <div class="wrap">
+    <div id="motiva"></div>
     <div class="stats">
       <div class="stat"><div class="n" id="sSemana">0</div><div class="t">Sesiones (7 días)</div></div>
       <div class="stat"><div class="n" id="sRacha">0</div><div class="t">Días seguidos</div></div>
@@ -330,6 +358,10 @@
     </div>
     <h2 class="sec">Objetivos de la semana · OMS</h2>
     <div id="goals"></div>
+    <h2 class="sec">Tu evolución · últimas 8 semanas</h2>
+    <div id="grafica"></div>
+    <h2 class="sec">Logros</h2>
+    <div id="logros"></div>
     <h2 class="sec">Actividad reciente</h2>
     <div id="historial"></div>
   </div>
@@ -368,6 +400,11 @@
       <label>¿Tienes alguna de estas molestias o condiciones?</label>
       <div class="conds" id="condsBox"></div>
       <div class="hint">Marca las que correspondan. Adaptaremos las rutinas para no incluir ejercicios que puedan perjudicarte.</div>
+    </div>
+    <div class="field">
+      <label>¿Con qué equipo cuentas?</label>
+      <div class="conds" id="equipoBox"></div>
+      <div class="hint">Marca lo que tengas; dejaremos fuera de las rutinas los ejercicios que necesiten algo que no tienes. Muchos ejercicios de fuerza se pueden hacer con <b>botellas de agua llenas</b>.</div>
     </div>
     <button class="btn" onclick="guardarPerfil()">Guardar perfil</button>
     <div class="guardado" id="guardadoMsg">✓ Perfil guardado</div>
@@ -553,6 +590,16 @@ const CONDICIONES=[
 ];
 const NOMBRE_COND={rodilla:'problemas de rodilla',cadera:'problemas de cadera',espalda:'dolor de espalda',hombro:'problemas de hombro',corazon:'condición cardiovascular',equilibrio:'inestabilidad o mareos',osteoporosis:'osteoporosis'};
 
+/* Equipo disponible. El usuario marca lo que tiene; se excluyen los ejercicios que
+   necesiten algo que no tenga. Cada ejercicio pide "al menos uno" de su lista. */
+const EQUIPOS=[
+  {k:'pesas',n:'Pesas o botellas de agua'},
+  {k:'banda',n:'Banda elástica'},
+  {k:'bici',n:'Bicicleta'}
+];
+const EQUIPO_NOMBRE={pesas:'pesas o botellas de agua',banda:'banda elástica',bici:'bicicleta'};
+const EQUIPO_EJ={remo:['banda','pesas'],curl:['pesas'],press:['pesas'],bici:['bici']};
+
 const EJERCICIOS=[
   {id:'sentadilla',cat:'fuerza',nombre:'Sentadillas',fig:'sentadilla',anim:true,dosis:'2–3 series · 10–12 rep',tiempo:45,contra:['rodilla','cadera'],
     pasos:['De pie, pies al ancho de los hombros y punta ligeramente hacia fuera.','Baja las caderas hacia atrás, como si fueras a sentarte.','Baja hasta donde te resulte cómodo, rodillas alineadas sobre los pies.','Sube empujando con los talones hasta ponerte recto.'],
@@ -686,9 +733,18 @@ const saveH=a=>localStorage.setItem(KEY,JSON.stringify(a));
 function registrar(ej){const h=read();h.push({id:ej.id,nombre:ej.nombre,cat:ej.cat,fecha:new Date().toISOString()});saveH(h);}
 const hoyStr=()=>new Date().toDateString();
 const hechosHoy=()=>read().filter(x=>new Date(x.fecha).toDateString()===hoyStr()).map(x=>x.id);
-function getPerfil(){try{return Object.assign({altura:'',peso:'',condiciones:[]},JSON.parse(localStorage.getItem(KEYP))||{})}catch(e){return{altura:'',peso:'',condiciones:[]}}}
+function getPerfil(){try{return Object.assign({altura:'',peso:'',condiciones:[],equipo:null},JSON.parse(localStorage.getItem(KEYP))||{})}catch(e){return{altura:'',peso:'',condiciones:[],equipo:null}}}
 function setPerfil(p){localStorage.setItem(KEYP,JSON.stringify(p));}
 function condConflicto(ej){const c=getPerfil().condiciones||[];return (ej.contra||[]).filter(x=>c.includes(x));}
+/* Devuelve el equipo que falta para un ejercicio (vacío si se puede hacer).
+   Si el perfil aún no tiene el equipo configurado (null), no se excluye nada. */
+function faltaEquipo(ej){
+  const reqs=EQUIPO_EJ[ej.id]; if(!reqs) return [];
+  const eq=getPerfil().equipo; if(eq==null) return [];
+  return reqs.some(r=>eq.includes(r)) ? [] : reqs;
+}
+/* Un ejercicio no está disponible si choca con una condición o falta el equipo. */
+function noDisponible(ej){return condConflicto(ej).length>0 || faltaEquipo(ej).length>0;}
 
 /* ==================== RUTINAS ==================== */
 const DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
@@ -763,7 +819,7 @@ function pintarRutinas(){
   }).join('');
 
   document.getElementById('listaRutinas').innerHTML=ROUTINES.map(r=>{
-    const quitados=r.pasos.filter(p=>condConflicto(EJERCICIOS.find(e=>e.id===p.id)).length).length;
+    const quitados=r.pasos.filter(p=>noDisponible(EJERCICIOS.find(e=>e.id===p.id))).length;
     return `<div class="rut" onclick="iniciarRutina('${r.id}')">
       <div class="ricon" style="background:${r.bg}">${r.icono}</div>
       <div class="rinfo"><h3>${r.nombre}</h3><div class="rmeta">${r.desc} · ~${rutMins(r)} min · ${r.pasos.length-quitados} ejercicios</div>
@@ -794,25 +850,27 @@ function pintarGrid(){
   const hoy=hechosHoy();
   const lista=EJERCICIOS.filter(e=>filtro==='todos'||e.cat===filtro);
   document.getElementById('gridEjercicios').innerHTML=lista.map(ej=>{
-    const conf=condConflicto(ej);
+    const conf=condConflicto(ej), faltaEq=faltaEquipo(ej);
     return `<div class="ex ${hoy.includes(ej.id)?'hecho':''}" onclick="detalle('${ej.id}')">
       <div class="thumb ${ej.cat} ${tieneFoto(ej)?'foto':''}"><span class="tag ${ej.cat}">${CATS[ej.cat].n}</span>
         <span class="done"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
         ${visual(ej,ej.anim)}</div>
       <div class="body"><h3>${ej.nombre}</h3><div class="meta">${ej.dosis}</div>
-        ${conf.length?`<div class="caution">⚠ Revisa: ${conf.map(k=>CONDICIONES.find(c=>c.k===k).n).join(', ')}</div>`:''}</div>
+        ${conf.length?`<div class="caution">⚠ Revisa: ${conf.map(k=>CONDICIONES.find(c=>c.k===k).n).join(', ')}</div>`:''}
+        ${faltaEq.length?`<div class="caution equipo">🧰 Necesitas: ${faltaEq.map(k=>EQUIPO_NOMBRE[k]).join(' o ')}</div>`:''}</div>
     </div>`;
   }).join('');
 }
 function detalle(id){
   const ej=EJERCICIOS.find(e=>e.id===id);
-  const done=hechosHoy().includes(id), conf=condConflicto(ej), cv=CVAR[ej.cat];
+  const done=hechosHoy().includes(id), conf=condConflicto(ej), faltaEq=faltaEquipo(ej), cv=CVAR[ej.cat];
   document.getElementById('detalle').innerHTML=`
     <button class="back" onclick="go('entrenar')">‹ Volver</button>
     <div class="hero ${tieneFoto(ej)?'foto':''}" style="background:${tieneFoto(ej)?'#fff':`var(--${cv}-l)`}">${visual(ej,true)}</div>
     <h2>${ej.nombre}</h2>
     <div class="badges"><span class="badge" style="background:var(--${cv}-l);color:var(--${cv})">${CATS[ej.cat].n}</span><span class="badge">🎯 ${ej.dosis}</span></div>
     ${conf.length?`<div class="warnbox"><span>⚠️</span><div><b>Con cuidado / no recomendado</b> por tu perfil (${conf.map(k=>NOMBRE_COND[k]).join(', ')}). Considera saltarlo o consultarlo con tu médico o fisioterapeuta.</div></div>`:''}
+    ${faltaEq.length?`<div class="warnbox equipo"><span>🧰</span><div><b>Necesitas equipo</b> que no has marcado en tu perfil: ${faltaEq.map(k=>EQUIPO_NOMBRE[k]).join(' o ')}. Si lo consigues, márcalo en tu perfil y volverá a las rutinas.</div></div>`:''}
     ${(MUSCULOS_EJ[ej.id]||[]).length?`<div class="muscard"><div class="mtit">Músculos que trabajas</div><div class="musfig">${musculoSVG(MUSCULOS_EJ[ej.id])}</div><div class="muslegend">${MUSCULOS_EJ[ej.id].map(m=>`<span class="mchip">${MUSC_NOMBRE[m]}</span>`).join('')}</div></div>`:''}
     <ol class="steps">${ej.pasos.map(p=>`<li>${p}</li>`).join('')}</ol>
     <div class="tip"><span>💡</span><div><b>Consejo:</b> ${ej.tip}</div></div>
@@ -824,6 +882,56 @@ function marcarSuelto(id){const ej=EJERCICIOS.find(e=>e.id===id);registrar(ej);t
 
 /* ==================== PROGRESO ==================== */
 const diasUnicos=e=>new Set(e.map(x=>new Date(x.fecha).toDateString())).size;
+/* --- Progreso motivador: mensaje, gráfica de evolución y logros --- */
+function lunesDe(fecha){const h=new Date(fecha);const off=(h.getDay()+6)%7;const mon=new Date(h);mon.setDate(h.getDate()-off);mon.setHours(0,0,0,0);return mon;}
+function diasActivosEntre(h,ini,fin){const s=new Set();h.forEach(x=>{const f=new Date(x.fecha);if(f>=ini&&f<fin)s.add(f.toDateString());});return s.size;}
+function mejorRacha(h){
+  const set=[...new Set(h.map(x=>new Date(x.fecha).toDateString()))].map(s=>new Date(s)).sort((a,b)=>a-b);
+  if(!set.length)return 0;
+  let best=1,cur=1;
+  for(let i=1;i<set.length;i++){const diff=Math.round((set[i]-set[i-1])/86400000);if(diff===1){cur++;best=Math.max(best,cur);}else if(diff>1){cur=1;}}
+  return best;
+}
+function semanaCompleta(h){
+  const map={};
+  h.forEach(x=>{const wk=lunesDe(new Date(x.fecha)).toDateString();(map[wk]=map[wk]||new Set()).add(x.cat);});
+  return Object.values(map).some(s=>s.has('fuerza')&&s.has('cardio')&&s.has('equilibrio')&&s.has('flexibilidad'));
+}
+function pintarMotiva(h){
+  const lun=lunesDe(new Date()), fin=new Date(lun);fin.setDate(lun.getDate()+7);
+  const diasSem=diasActivosEntre(h,lun,fin), racha=calcularRacha(h);
+  let msg, emo;
+  if(!h.length){emo='👋';msg='Bienvenido. Hoy es un buen día para empezar: elige una rutina y da el primer paso.';}
+  else if(diasSem===0){emo='💪';msg='Nueva semana, nueva oportunidad. Con una sola sesión ya arrancas.';}
+  else if(diasSem<3){emo='🌟';msg=`Vas bien: ${diasSem} día${diasSem>1?'s':''} esta semana. ¿Sumamos otro?`;}
+  else if(diasSem<5){emo='🔥';msg=`¡Genial! ${diasSem} días esta semana. Estás cogiendo el ritmo.`;}
+  else{emo='🏆';msg=`¡Espectacular! ${diasSem} días esta semana. Eres todo un ejemplo.`;}
+  const rachaTxt=racha>=2?`<div class="motiva-racha">🔥 ${racha} días seguidos — no rompas la cadena</div>`:'';
+  document.getElementById('motiva').innerHTML=`<div class="motiva"><div class="motiva-emo">${emo}</div><div><div class="motiva-msg">${msg}</div>${rachaTxt}</div></div>`;
+}
+function pintarGrafica(h){
+  const hoyLunes=lunesDe(new Date()), sem=[];
+  for(let k=7;k>=0;k--){const ini=new Date(hoyLunes);ini.setDate(hoyLunes.getDate()-k*7);const fin=new Date(ini);fin.setDate(ini.getDate()+7);sem.push({ini,dias:diasActivosEntre(h,ini,fin),actual:k===0});}
+  const barras=sem.map(s=>{
+    const pct=Math.round(s.dias/7*100), et=s.actual?'Esta':(s.ini.getDate()+'/'+(s.ini.getMonth()+1));
+    return `<div class="gcol"><div class="gbar-wrap"><div class="gval">${s.dias||''}</div><div class="gbar ${s.actual?'now':''}" style="height:${pct}%"></div></div><div class="glab">${et}</div></div>`;
+  }).join('');
+  document.getElementById('grafica').innerHTML=`<div class="grafica"><div class="gcols">${barras}</div><div class="gnota">Días que te moviste cada semana (de 0 a 7)</div></div>`;
+}
+const LOGROS=[
+  {ic:'🌱',n:'Primer paso',d:'Tu primera sesión',ok:m=>m.dias>=1},
+  {ic:'🔥',n:'En racha',d:'3 días seguidos',ok:m=>m.mejorRacha>=3},
+  {ic:'⚡',n:'Semana imparable',d:'7 días seguidos',ok:m=>m.mejorRacha>=7},
+  {ic:'🎖️',n:'Constante',d:'10 días de ejercicio',ok:m=>m.dias>=10},
+  {ic:'🏅',n:'Comprometido',d:'25 días de ejercicio',ok:m=>m.dias>=25},
+  {ic:'🏆',n:'Veterano',d:'50 días de ejercicio',ok:m=>m.dias>=50},
+  {ic:'🌈',n:'Semana redonda',d:'Los 4 pilares en una semana',ok:m=>m.semanaCompleta}
+];
+function pintarLogros(h){
+  const m={dias:diasUnicos(h),mejorRacha:mejorRacha(h),semanaCompleta:semanaCompleta(h)};
+  const hechos=LOGROS.filter(l=>l.ok(m)).length;
+  document.getElementById('logros').innerHTML=`<div class="logros-top">${hechos} de ${LOGROS.length} conseguidos</div><div class="logros">${LOGROS.map(l=>{const ok=l.ok(m);return `<div class="logro ${ok?'ok':''}"><div class="lic">${ok?l.ic:'🔒'}</div><div class="ltxt"><div class="ln">${l.n}</div><div class="ld">${l.d}</div></div></div>`;}).join('')}</div>`;
+}
 function pintarProgreso(){
   const h=read(), finde=new Date();finde.setDate(finde.getDate()-7);
   const semana=h.filter(x=>new Date(x.fecha)>=finde);
@@ -840,6 +948,7 @@ function pintarProgreso(){
     const dias=diasUnicos(semana.filter(x=>x.cat===m.cat)),pct=Math.min(100,Math.round(dias/m.obj*100)),ok=dias>=m.obj;
     return `<div class="goal ${m.cat} ${ok?'ok':''}"><div class="top"><span class="name">${m.n}</span><span class="count">${dias} / ${m.obj} días</span></div><div class="bar"><i style="width:${pct}%"></i></div><div class="rec">${m.rec}</div></div>`;
   }).join('');
+  pintarMotiva(h);pintarGrafica(h);pintarLogros(h);
   const cont=document.getElementById('historial');
   if(!h.length){cont.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="#0f5f57" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-6"/></svg><div>Aún no hay actividad registrada.<br>Empieza por tu primera rutina de hoy.</div></div>`;return;}
   const dias={};h.slice().reverse().forEach(x=>{const k=new Date(x.fecha).toDateString();(dias[k]=dias[k]||[]).push(x);});
@@ -874,11 +983,15 @@ function pintarPerfil(){
   document.getElementById('inAltura').value=p.altura||'';
   document.getElementById('inPeso').value=p.peso||'';
   document.getElementById('condsBox').innerHTML=CONDICIONES.map(c=>`<button class="cond ${(p.condiciones||[]).includes(c.k)?'on':''}" data-k="${c.k}" onclick="this.classList.toggle('on')">${c.n}</button>`).join('');
+  // Si aún no ha configurado el equipo, asumimos que lo tiene todo (chips marcados).
+  const eqSel = (p.equipo==null) ? EQUIPOS.map(e=>e.k) : p.equipo;
+  document.getElementById('equipoBox').innerHTML=EQUIPOS.map(e=>`<button class="equip ${eqSel.includes(e.k)?'on':''}" data-k="${e.k}" onclick="this.classList.toggle('on')">${e.n}</button>`).join('');
   document.getElementById('guardadoMsg').classList.remove('ver');
 }
 function guardarPerfil(){
   const condiciones=[...document.querySelectorAll('#condsBox .cond.on')].map(b=>b.dataset.k);
-  const p={altura:document.getElementById('inAltura').value.trim(),peso:document.getElementById('inPeso').value.trim(),condiciones};
+  const equipo=[...document.querySelectorAll('#equipoBox .equip.on')].map(b=>b.dataset.k);
+  const p={altura:document.getElementById('inAltura').value.trim(),peso:document.getElementById('inPeso').value.trim(),condiciones,equipo};
   setPerfil(p);
   document.getElementById('guardadoMsg').classList.add('ver');
   actualizarAlertaPerfil();
@@ -964,7 +1077,7 @@ function construirPasos(rut){
   const steps=[];let quitados=0;
   rut.pasos.forEach(p=>{
     const ej=EJERCICIOS.find(e=>e.id===p.id);
-    if(condConflicto(ej).length){quitados++;return;}
+    if(noDisponible(ej)){quitados++;return;}
     steps.push({ej,d:p.d});
   });
   return {steps,quitados};
