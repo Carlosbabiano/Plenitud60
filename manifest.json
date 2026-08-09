@@ -1,0 +1,14 @@
+{
+  "name": "Plenitud 60+",
+  "short_name": "Plenitud",
+  "description": "Ejercicio y nutrición para mayores de 60",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f5f57",
+  "theme_color": "#0f5f57",
+  "icons": [
+    { "src": "icono.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
