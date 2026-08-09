@@ -251,12 +251,22 @@
   .player .pfoot{padding:12px 22px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card);}
   .player .preps{font-size:32px;font-weight:800;color:var(--primary);margin:12px 0 4px;line-height:1.15;}
   /* contador de series */
+  .player .plado{font-size:17px;font-weight:700;color:var(--primary-d);margin:2px 0 0;}
   .player .pserie{font-size:17px;font-weight:700;color:var(--ink);margin:6px 0 2px;}
   .player .pserie b{font-size:22px;color:var(--primary);}
   .player .pdots{display:flex;gap:9px;justify-content:center;margin:4px 0 8px;}
   .player .pdot{width:16px;height:16px;border-radius:50%;background:var(--line);border:2px solid var(--line);}
   .player .pdot.on{background:var(--primary);border-color:var(--primary);}
   .player .pdot.now{background:#fff;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-l);}
+
+  /* reanudar sesión sin terminar */
+  .reanudar{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,var(--primary),var(--primary-d));color:#fff;border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .reanudar-info{flex:1;min-width:0;}
+  .reanudar-info .rt{font-weight:750;font-size:15.5px;}
+  .reanudar-info .rs{font-size:13px;opacity:.92;margin-top:2px;}
+  .reanudar-btns{display:flex;flex-direction:column;gap:6px;flex:0 0 auto;}
+  .reanudar .rean-go{background:#fff;color:var(--primary-d);border:none;border-radius:10px;padding:9px 16px;font-weight:700;font-size:14px;cursor:pointer;}
+  .reanudar .rean-x{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:7px 16px;font-weight:600;font-size:12.5px;cursor:pointer;}
 
   /* rutinas pendientes de la semana */
   .pend{background:#fff7ea;border:1px solid #f0d49a;border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-sm);}
@@ -287,6 +297,7 @@
 <!-- ===== RUTINAS ===== -->
 <div class="pantalla activa" id="p-rutinas">
   <div class="wrap">
+    <div id="reanudarCard"></div>
     <div id="avisoPerfil"></div>
     <div id="hoyCard"></div>
     <div id="pendientesCard"></div>
@@ -633,6 +644,15 @@ const REPS_INFO={
 function seriesDe(ej){return (REPS_INFO[ej.id]&&REPS_INFO[ej.id].series)||1;}
 function repsDe(ej){return (REPS_INFO[ej.id]&&REPS_INFO[ej.id].reps)||ej.dosis;}
 
+/* Ejercicios de tiempo que se hacen por los dos lados: el contador corre una vez por lado. */
+const LADOS={
+  unapierna:['Pierna derecha','Pierna izquierda'],
+  isquios:['Pierna derecha','Pierna izquierda'],
+  pantorrilla:['Pierna derecha','Pierna izquierda'],
+  cuello:['Lado derecho','Lado izquierdo']
+};
+function ladosDe(ej){return LADOS[ej.id]||null;}
+
 /* Rutinas (cada paso: id de ejercicio + duración en segundos) */
 const ROUTINES=[
   {id:'completa',icono:'🌿',bg:'var(--primary-l)',nombre:'Rutina completa',desc:'Los 4 pilares en una sesión equilibrada',
@@ -702,6 +722,13 @@ function pendientesSemana(){
 function hacerPendiente(i,id){marcarRecuperado(i);iniciarRutina(id);}
 
 function pintarRutinas(){
+  const ses=cargarSesion();
+  document.getElementById('reanudarCard').innerHTML = (ses&&ses.pasos&&ses.pasos.length) ? `
+    <div class="reanudar">
+      <div class="reanudar-info"><div class="rt">▶ Sesión sin terminar</div><div class="rs">${ses.titulo} · ejercicio ${Math.min((ses.i||0)+1,ses.pasos.length)} de ${ses.pasos.length}</div></div>
+      <div class="reanudar-btns"><button class="rean-go" onclick="reanudarSesion()">Reanudar</button><button class="rean-x" onclick="descartarSesion()">Descartar</button></div>
+    </div>` : '';
+
   const perfil=getPerfil();
   const tieneP=perfil.peso||perfil.altura||(perfil.condiciones&&perfil.condiciones.length);
   document.getElementById('avisoPerfil').innerHTML=tieneP?'':`<div class="aviso-perfil"><span>👤</span><div>Completa tu perfil para adaptar las rutinas a ti.</div><button onclick="go('perfil')">Completar</button></div>`;
@@ -890,7 +917,38 @@ function crearRecordatorio(){
 }
 
 /* ==================== REPRODUCTOR / TEMPORIZADOR ==================== */
-let RP={steps:[],i:0,t:0,timer:null,paused:false,titulo:'',doneIds:[],phase:'intro',serie:1,seriesTotal:1};
+let RP={steps:[],i:0,t:0,timer:null,paused:false,titulo:'',doneIds:[],phase:'intro',serie:1,seriesTotal:1,lado:0};
+
+/* ---- Guardar/recuperar la sesión en curso (para seguir donde nos quedamos) ---- */
+const KEY_SESION='plenitud60_sesion';
+function guardarSesion(){
+  try{
+    if(!RP.steps||!RP.steps.length)return;
+    localStorage.setItem(KEY_SESION,JSON.stringify({
+      titulo:RP.titulo, pasos:RP.steps.map(p=>({id:p.ej.id,d:p.d})),
+      i:RP.i, phase:RP.phase, t:RP.t, serie:RP.serie, seriesTotal:RP.seriesTotal,
+      lado:RP.lado, doneIds:RP.doneIds, paused:RP.paused
+    }));
+  }catch(e){}
+}
+function cargarSesion(){try{return JSON.parse(localStorage.getItem(KEY_SESION));}catch(e){return null;}}
+function borrarSesion(){try{localStorage.removeItem(KEY_SESION);}catch(e){}}
+function reanudarSesion(){
+  const s=cargarSesion(); if(!s||!s.pasos||!s.pasos.length)return;
+  const steps=s.pasos.map(p=>({ej:EJERCICIOS.find(e=>e.id===p.id),d:p.d})).filter(x=>x.ej);
+  if(!steps.length){borrarSesion();pintarRutinas();return;}
+  RP={steps, i:Math.min(s.i||0,steps.length-1), t:s.t||steps[0].d, timer:null, paused:!!s.paused,
+      titulo:s.titulo||'Sesión', doneIds:s.doneIds||[], phase:s.phase==='run'?'run':'intro',
+      serie:s.serie||1, seriesTotal:s.seriesTotal||1, lado:s.lado||0};
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}
+  document.getElementById('player').classList.add('on');
+  pedirWakeLock();
+  if(RP.phase==='run'){
+    if(esTiempo(RP.steps[RP.i].ej)) RP.timer=setInterval(pTick,1000);
+    pRenderRun();
+  } else { pRenderIntro(); }
+}
+function descartarSesion(){ if(confirm('¿Descartar la sesión sin terminar?')){borrarSesion();pintarRutinas();} }
 let AC;
 function beep(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);o.frequency.value=880;g.gain.value=.06;o.start();o.stop(AC.currentTime+.13);}catch(e){}if(navigator.vibrate)navigator.vibrate(120);}
 const fmt=s=>{const m=Math.floor(s/60),ss=s%60;return m+':'+String(ss).padStart(2,'0');};
@@ -950,26 +1008,39 @@ function irAPaso(i){
   clearInterval(RP.timer);RP.timer=null;
   RP.i=i;RP.paused=false;RP.phase='intro';RP.t=RP.steps[i].d;
   pRenderIntro();
+  guardarSesion();
   anunciarActual();
 }
+/* Vuelve al ejercicio anterior (por si te has saltado algo o quieres repetirlo). */
+function pAnterior(){ if(RP.i>0) irAPaso(RP.i-1); }
 /* Botón "Empezar": arranca el ejercicio. Contador sólo si es de tiempo. */
 function pStart(){
   const st=RP.steps[RP.i];RP.phase='run';RP.paused=false;
   clearInterval(RP.timer);RP.timer=null;
-  if(esTiempo(st.ej)){RP.t=st.d;RP.timer=setInterval(pTick,1000);}
+  const lados=ladosDe(st.ej);
+  if(esTiempo(st.ej)){RP.lado=0;RP.t=st.d;RP.timer=setInterval(pTick,1000);}
   else{RP.serie=1;RP.seriesTotal=seriesDe(st.ej);}
   pRenderRun();
-  hablar('Empieza. '+st.ej.nombre);
+  guardarSesion();
+  hablar('Empieza. '+st.ej.nombre+(lados?'. '+lados[0]:''));
 }
 /* Completa una serie del ejercicio de repeticiones; al terminar la última, pasa al siguiente. */
 function serieHecha(){
   beep();
   if(RP.serie>=RP.seriesTotal){pDone(true);return;}
   RP.serie++;
-  pRenderRun();
+  pRenderRun();guardarSesion();
   hablar(RP.serie>=RP.seriesTotal?'Última serie':'Serie '+RP.serie+' de '+RP.seriesTotal);
 }
-function pTick(){if(RP.paused||RP.phase!=='run')return;RP.t--;if(RP.t<=0){pDone(true);}else{pTime();if(RP.t<=3)hablar(String(RP.t));}}
+/* En ejercicios de tiempo por lados, cambia de lado; si era el último, pasa al siguiente ejercicio. */
+function avanzarTiempo(){
+  const lados=ladosDe(RP.steps[RP.i].ej);
+  if(lados && RP.lado<lados.length-1){
+    RP.lado++;RP.t=RP.steps[RP.i].d;RP.paused=false;beep();pRenderRun();guardarSesion();
+    hablar(lados[RP.lado]);
+  } else { pDone(true); }
+}
+function pTick(){if(RP.paused||RP.phase!=='run')return;RP.t--;if(RP.t<=0){avanzarTiempo();return;}pTime();if(RP.t<=3)hablar(String(RP.t));guardarSesion();}
 function pTime(){const el=document.getElementById('pTime');if(el)el.textContent=fmt(Math.max(0,RP.t));}
 /* Termina el ejercicio actual (markDone=true lo registra) y pasa al siguiente. */
 function pDone(markDone){
@@ -980,7 +1051,7 @@ function pDone(markDone){
   if(RP.i+1>=RP.steps.length){pFinish();return;}
   irAPaso(RP.i+1);
 }
-function pPause(){RP.paused=!RP.paused;pRenderRun();}
+function pPause(){RP.paused=!RP.paused;pRenderRun();guardarSesion();}
 /* Pantalla de explicación previa a cada ejercicio (con botón Empezar) */
 function pRenderIntro(){
   const el=document.getElementById('player'), ej=RP.steps[RP.i].ej, cv=CVAR[ej.cat];
@@ -998,7 +1069,7 @@ function pRenderIntro(){
     </div>
     <div class="pfoot">
       <button class="bp" onclick="pStart()">▶ Empezar${esTiempo(ej)?'':' ejercicio'}</button>
-      <div class="prow"><button onclick="pDone(false)">Saltar</button></div>
+      <div class="prow">${RP.i>0?'<button onclick="pAnterior()">‹ Anterior</button>':''}<button onclick="pDone(false)">Saltar</button></div>
     </div>`;
 }
 /* Ejercicio en marcha: contador de tiempo si es de tiempo; si es de repeticiones,
@@ -1007,11 +1078,14 @@ function pRenderRun(){
   const el=document.getElementById('player'), ej=RP.steps[RP.i].ej, cv=CVAR[ej.cat];
   el.classList.remove('rest');
   const tiempo=esTiempo(ej);
+  const atras=RP.i>0?'<button onclick="pAnterior()">‹ Anterior</button>':'';
   let centro, botones;
   if(tiempo){
-    centro=`<div class="ptime" id="pTime">${fmt(RP.t)}</div>`;
-    botones=`<button class="bp" onclick="pDone(true)">Hecho ✓</button>
-      <div class="prow"><button onclick="pPause()">${RP.paused?'▶ Reanudar':'⏸ Pausar'}</button><button onclick="pDone(false)">Saltar</button></div>`;
+    const lados=ladosDe(ej), hayLados=lados&&lados.length>1;
+    const ultimo=!hayLados||RP.lado>=lados.length-1;
+    centro=`${hayLados?`<div class="plado">${lados[RP.lado]} · ${RP.lado+1} de ${lados.length}</div>`:''}<div class="ptime" id="pTime">${fmt(RP.t)}</div>`;
+    botones=`<button class="bp" onclick="avanzarTiempo()">${ultimo?'Hecho ✓':'Siguiente lado ✓'}</button>
+      <div class="prow">${atras}<button onclick="pPause()">${RP.paused?'▶ Reanudar':'⏸ Pausar'}</button><button onclick="pDone(false)">Saltar</button></div>`;
   } else if(RP.seriesTotal>1){
     const ultima=RP.serie>=RP.seriesTotal;
     const dots=Array.from({length:RP.seriesTotal},(_,k)=>{const n=k+1,c=n<RP.serie?'on':(n===RP.serie?'now':'');return `<span class="pdot ${c}"></span>`;}).join('');
@@ -1019,11 +1093,11 @@ function pRenderRun(){
       <div class="pserie">Serie <b>${RP.serie}</b> de ${RP.seriesTotal}</div>
       <div class="pdots">${dots}</div>`;
     botones=`<button class="bp" onclick="serieHecha()">${ultima?'Terminar ejercicio ✓':'Serie hecha ✓'}</button>
-      <div class="prow"><button onclick="pDone(false)">Saltar ejercicio</button></div>`;
+      <div class="prow">${atras}<button onclick="pDone(false)">Saltar ejercicio</button></div>`;
   } else {
     centro=`<div class="preps">${repsDe(ej)}</div>`;
     botones=`<button class="bp" onclick="pDone(true)">Hecho ✓</button>
-      <div class="prow"><button onclick="pDone(false)">Saltar</button></div>`;
+      <div class="prow">${atras}<button onclick="pDone(false)">Saltar</button></div>`;
   }
   el.innerHTML=`
     ${pHead((RP.i+1)+'/'+RP.steps.length)}
@@ -1034,7 +1108,7 @@ function pRenderRun(){
       ${botones}</div>`;
 }
 function pFinish(){
-  clearInterval(RP.timer);
+  clearInterval(RP.timer);borrarSesion();
   const done=[...RP.doneIds];
   done.forEach(id=>{const ej=EJERCICIOS.find(e=>e.id===id);registrar(ej);});
   const el=document.getElementById('player');el.classList.remove('rest');
@@ -1044,7 +1118,7 @@ function pFinish(){
     <button class="bp" onclick="pClose();go('progreso')">Ver mi progreso</button>
     <div class="prow"><button onclick="pClose()">Cerrar</button></div></div>`;
 }
-function pClose(){clearInterval(RP.timer);soltarWakeLock();document.getElementById('player').classList.remove('on');pintarRutinas();pintarGrid();}
+function pClose(){clearInterval(RP.timer);soltarWakeLock();borrarSesion();document.getElementById('player').classList.remove('on');pintarRutinas();pintarGrid();}
 
 /* ==================== NAV ==================== */
 function mostrar(p){document.querySelectorAll('.pantalla').forEach(x=>x.classList.remove('activa'));document.getElementById('p-'+p).classList.add('activa');window.scrollTo(0,0);}

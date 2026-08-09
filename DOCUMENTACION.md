@@ -91,6 +91,31 @@ se bloquea y se vuelve a abrir, el bloqueo se recupera automáticamente.
 - Código: `wakeLock`, `pedirWakeLock()`, `soltarWakeLock()`, el listener de
   `visibilitychange`, y las llamadas en `arrancarPlayer()` / `pClose()`.
 
+**6. Ejercicios de tiempo por los dos lados**
+Los ejercicios de tiempo que se hacen «por pierna» o «por lado» (apoyo a una pierna,
+estiramiento de piernas, de pantorrilla y de cuello) ahora **cronometran cada lado**: el
+contador corre para «Pierna derecha», y al terminar pasa a «Pierna izquierda» antes de
+avanzar al siguiente ejercicio. Antes solo daba tiempo para un lado.
+- Qué ejercicios tienen dos lados se define en el objeto `LADOS`.
+- Código: `ladosDe()`, `avanzarTiempo()`, y la rama de tiempo de `pRenderRun()`.
+
+**7. Botón «Anterior» en el reproductor**
+Durante una rutina se puede **volver al ejercicio anterior** (por si te lo saltaste o
+quieres repetirlo). Aparece a partir del segundo ejercicio.
+- Código: `pAnterior()` y el botón en `pRenderIntro()` / `pRenderRun()`.
+
+**8. Reanudar la sesión si se cierra la app**
+Mientras haces una rutina, la app **guarda continuamente** dónde estás (ejercicio, fase,
+contador, lado, serie, ejercicios ya hechos). Si la app se cierra por cualquier motivo
+(se bloquea el móvil, se cierra Safari, un aviso…), al volver a abrirla aparece en la
+pantalla de Rutinas un aviso **«▶ Sesión sin terminar»** con botones **Reanudar** y
+**Descartar**. Reanudar reabre el reproductor justo donde se quedó.
+- La sesión se guarda en `localStorage` (`plenitud60_sesion`). Se borra al **completar**
+  la rutina o al **cerrarla a propósito** con la ✕ (así el aviso solo aparece tras cierres
+  inesperados).
+- Código: `guardarSesion()`, `cargarSesion()`, `borrarSesion()`, `reanudarSesion()`,
+  `descartarSesion()`, y el bloque `#reanudarCard` en `pintarRutinas()`.
+
 ---
 
 ## Datos guardados en el teléfono (localStorage)
@@ -101,6 +126,7 @@ se bloquea y se vuelve a abrir, el bloqueo se recupera automáticamente.
 | `plenitud60_perfil` | Altura, peso y condiciones. |
 | `plenitud60_plan` | Rutina asignada a cada día de la semana. |
 | `plenitud60_recuperados` | Días de esta semana ya recuperados. |
+| `plenitud60_sesion` | Sesión de ejercicio en curso (para reanudar si se cierra la app). |
 | `plenitud60_voz` | Si la voz que anuncia los ejercicios está activada. |
 
 ---
