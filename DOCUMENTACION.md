@@ -20,6 +20,16 @@ Se actualiza en cada cambio.
   foto con la cara del usuario. La lista de qué imagen usa cada ejercicio
   está en el objeto `FOTOS` de `index.html`; si un ejercicio no está en `FOTOS`,
   se dibuja con la figura SVG.
+- **Mapa muscular** (`musculos.png`): en la ficha de cada ejercicio, la tarjeta
+  «Músculos que trabajas» muestra una **lámina anatómica real** (frente y espalda)
+  atenuada, dejando a todo color los músculos que trabaja el ejercicio. Se hace por
+  código: la función `musculoSVG()` en `index.html` dibuja la imagen atenuada y una
+  segunda copia **recortada** (`clipPath`) a las zonas activas. Cada músculo tiene sus
+  elipses en el objeto `MREG` (coordenadas sobre la imagen 960×837). Qué músculos
+  trabaja cada ejercicio está en `MUSCULOS_EJ`. La lámina es *"Muscles front and back"*
+  de Tomáš Kebert & umimeto.org (Wikimedia), **licencia CC BY-SA 4.0**: por eso se
+  muestra el **crédito** bajo la figura (obligatorio; no quitar). La antigua figura
+  dibujada (`drawBody`) quedó sin uso.
 - **`manifest.json`**: configuración de la PWA (nombre, iconos, color).
 
 ### Secciones de la app (pestañas inferiores)

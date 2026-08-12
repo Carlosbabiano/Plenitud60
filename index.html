@@ -100,7 +100,9 @@
   .muscard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:18px;box-shadow:var(--shadow-sm);}
   .muscard .mtit{font-weight:650;font-size:14px;margin-bottom:8px;color:var(--ink);}
   .musfig{display:flex;justify-content:center;}
-  .musfig svg{width:100%;max-width:300px;height:auto;}
+  .musfig svg{width:100%;max-width:360px;height:auto;}
+  .muscredit{font-size:10px;color:var(--muted);margin-top:9px;line-height:1.4;text-align:center;}
+  .muscredit a{color:var(--muted);}
   .muslegend{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px;}
   .mchip{font-size:12.5px;font-weight:600;color:#a01f1f;background:#fde3e0;border-radius:20px;padding:4px 11px;display:inline-flex;align-items:center;gap:6px;}
   .mchip:before{content:"";width:8px;height:8px;border-radius:50%;background:#e23b2f;}
@@ -545,10 +547,36 @@ function drawBody(A,back){
   }
   return sil+m;
 }
+/* Lámina anatómica real. Base: "Muscles front and back" de Tomáš Kebert & umimeto.org
+   (Wikimedia, CC BY-SA 4.0). Se muestra atenuada y se dejan a todo color (mediante recorte)
+   los músculos que trabaja el ejercicio. Coordenadas de cada músculo sobre la imagen 960x837
+   (figura de frente centrada en x≈245, figura de espalda en x≈730). La función drawBody de
+   arriba quedó en desuso al pasar de figura dibujada a lámina real. */
+const MREG={
+  hombros:[[168,166,26,24],[322,166,26,24],[652,168,26,24],[808,168,26,24]],
+  pecho:[[210,200,34,26],[282,200,34,26]],
+  biceps:[[150,258,17,38],[342,258,17,38]],
+  antebrazo:[[122,345,15,45],[370,345,15,45]],
+  abdominales:[[246,292,36,60]],
+  oblicuos:[[200,315,15,42],[292,315,15,42]],
+  cuadriceps:[[212,475,30,88],[282,475,30,88]],
+  tibial:[[216,645,17,66],[280,645,17,66]],
+  trapecio:[[730,205,52,72]],
+  triceps:[[628,258,17,38],[832,258,17,38]],
+  dorsales:[[676,300,26,55],[784,300,26,55]],
+  lumbar:[[730,352,28,38]],
+  gluteos:[[702,415,34,36],[758,415,34,36]],
+  isquiotibiales:[[700,495,30,82],[760,495,30,82]],
+  gemelos:[[704,645,20,66],[756,645,20,66]]
+};
 function musculoSVG(active){
-  return `<svg viewBox="0 0 250 314" xmlns="http://www.w3.org/2000/svg">
-    <g transform="translate(18,6)">${drawBody(active,false)}<text x="55" y="306" text-anchor="middle" font-size="13" font-weight="600" fill="#8a7a70" font-family="sans-serif">Frente</text></g>
-    <g transform="translate(130,6)">${drawBody(active,true)}<text x="55" y="306" text-anchor="middle" font-size="13" font-weight="600" fill="#8a7a70" font-family="sans-serif">Espalda</text></g>
+  const clip=(active||[]).flatMap(m=>(MREG[m]||[]).map(r=>`<ellipse cx="${r[0]}" cy="${r[1]}" rx="${r[2]}" ry="${r[3]}"/>`)).join('');
+  return `<svg viewBox="0 0 960 884" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs><clipPath id="mclip">${clip}</clipPath></defs>
+    <image xlink:href="musculos.png" href="musculos.png" x="0" y="0" width="960" height="837" opacity="0.26"/>
+    <image xlink:href="musculos.png" href="musculos.png" x="0" y="0" width="960" height="837" clip-path="url(#mclip)"/>
+    <text x="240" y="872" text-anchor="middle" font-size="28" font-weight="700" fill="#8a7a70" font-family="sans-serif">Frente</text>
+    <text x="720" y="872" text-anchor="middle" font-size="28" font-weight="700" fill="#8a7a70" font-family="sans-serif">Espalda</text>
   </svg>`;
 }
 const MUSC_NOMBRE={pecho:'Pecho',hombros:'Hombros',biceps:'Bíceps',antebrazo:'Antebrazos',abdominales:'Abdomen',oblicuos:'Oblicuos',cuadriceps:'Cuádriceps',tibial:'Espinillas',trapecio:'Trapecio',dorsales:'Dorsales',lumbar:'Lumbares',triceps:'Tríceps',gluteos:'Glúteos',isquiotibiales:'Isquiotibiales',gemelos:'Gemelos'};
@@ -924,7 +952,7 @@ function detalle(id){
     <div class="badges"><span class="badge" style="background:var(--${cv}-l);color:var(--${cv})">${CATS[ej.cat].n}</span><span class="badge">🎯 ${ej.dosis}</span></div>
     ${conf.length?`<div class="warnbox"><span>⚠️</span><div><b>Con cuidado / no recomendado</b> por tu perfil (${conf.map(k=>NOMBRE_COND[k]).join(', ')}). Considera saltarlo o consultarlo con tu médico o fisioterapeuta.</div></div>`:''}
     ${faltaEq.length?`<div class="warnbox equipo"><span>🧰</span><div><b>Necesitas equipo</b> que no has marcado en tu perfil: ${faltaEq.map(k=>EQUIPO_NOMBRE[k]).join(' o ')}. Si lo consigues, márcalo en tu perfil y volverá a las rutinas.</div></div>`:''}
-    ${(MUSCULOS_EJ[ej.id]||[]).length?`<div class="muscard"><div class="mtit">Músculos que trabajas</div><div class="musfig">${musculoSVG(MUSCULOS_EJ[ej.id])}</div><div class="muslegend">${MUSCULOS_EJ[ej.id].map(m=>`<span class="mchip">${MUSC_NOMBRE[m]}</span>`).join('')}</div></div>`:''}
+    ${(MUSCULOS_EJ[ej.id]||[]).length?`<div class="muscard"><div class="mtit">Músculos que trabajas</div><div class="musfig">${musculoSVG(MUSCULOS_EJ[ej.id])}</div><div class="muslegend">${MUSCULOS_EJ[ej.id].map(m=>`<span class="mchip">${MUSC_NOMBRE[m]}</span>`).join('')}</div><div class="muscredit">Ilustración muscular: T.&nbsp;Kebert &amp; umimeto.org · <a href="https://commons.wikimedia.org/wiki/File:Muscles_front_and_back.svg" target="_blank" rel="noopener">Wikimedia</a> · CC&nbsp;BY-SA&nbsp;4.0 (coloreada por zonas)</div></div>`:''}
     <ol class="steps">${ej.pasos.map(p=>`<li>${p}</li>`).join('')}</ol>
     <div class="tip"><span>💡</span><div><b>Consejo:</b> ${ej.tip}</div></div>
     <button class="btn" onclick="iniciarUno('${ej.id}')">▶ ${esTiempo(ej)?'Practicar con temporizador':'Practicar'}</button>
