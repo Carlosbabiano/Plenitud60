@@ -14,12 +14,13 @@ Se actualiza en cada cambio.
 
 - **Un único fichero**: `index.html` contiene el HTML, el CSS (dentro de `<style>`) y
   todo el JavaScript (dentro de `<script>`). No hay dependencias externas.
-- **Imágenes**: avatares (generados con IA, mismo personaje) de los ejercicios
-  (`foto-*.jpg`, redimensionados a 760 px de alto y ~20 KB cada uno) e iconos
-  (`icono*.png`, `apple-touch-icon.png`). Los 20 avatares cubren todos los
-  ejercicios **salvo `silla`** (levantarse sin manos), que sigue usando la figura
-  SVG. La lista de qué imagen usa cada ejercicio está en el objeto `FOTOS` de
-  `index.html`; si un ejercicio no está en `FOTOS`, se dibuja con SVG.
+- **Imágenes**: avatares (generados con IA con la cara del usuario) de los
+  ejercicios (`foto-*.jpg`, redimensionados a 760 px de alto y ~20 KB cada uno)
+  e iconos (`icono*.png`, `apple-touch-icon.png`). Los **21 ejercicios** tienen
+  foto. Falta pasar a la cara del usuario el de **rotación de tronco** (`tronco`),
+  que de momento usa un avatar genérico. La lista de qué imagen usa cada ejercicio
+  está en el objeto `FOTOS` de `index.html`; si un ejercicio no está en `FOTOS`,
+  se dibuja con la figura SVG.
 - **`manifest.json`**: configuración de la PWA (nombre, iconos, color).
 
 ### Secciones de la app (pestañas inferiores)

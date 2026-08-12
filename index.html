@@ -455,7 +455,7 @@
 const C={p:'#0f5f57',a:'#b45309',b:'#1d6fb8',g:'#3f8f4e',r:'#be123c',floor:'#0b4842',prop:'#cbd5d1'};
 function figura(id,animar){ return figuraHumana(id,animar); }
 /* Fotos reales de ejercicios (si existen, se usan en lugar de la figura SVG) */
-const FOTOS={sentadilla:'foto-sentadilla.jpg',pared:'foto-pared.jpg',zancada:'foto-zancada.jpg',talones:'foto-talones.jpg',puente:'foto-puente.jpg',remo:'foto-remo.jpg',curl:'foto-curl.jpg',press:'foto-press.jpg',caminar:'foto-caminar.jpg',marcha:'foto-marcha.jpg',escaleras:'foto-escaleras.jpg',bici:'foto-bici.jpg',unapierna:'foto-unapierna.jpg',tandem:'foto-tandem.jpg',puntillas:'foto-puntillas.jpg',cuello:'foto-cuello.jpg',hombros:'foto-hombros.jpg',isquios:'foto-isquios.jpg',pantorrilla:'foto-pantorrilla.jpg',tronco:'foto-tronco.jpg'};
+const FOTOS={sentadilla:'foto-sentadilla.jpg',pared:'foto-pared.jpg',zancada:'foto-zancada.jpg',talones:'foto-talones.jpg',puente:'foto-puente.jpg',remo:'foto-remo.jpg',curl:'foto-curl.jpg',press:'foto-press.jpg',caminar:'foto-caminar.jpg',marcha:'foto-marcha.jpg',escaleras:'foto-escaleras.jpg',bici:'foto-bici.jpg',unapierna:'foto-unapierna.jpg',tandem:'foto-tandem.jpg',silla:'foto-silla.jpg',puntillas:'foto-puntillas.jpg',cuello:'foto-cuello.jpg',hombros:'foto-hombros.jpg',isquios:'foto-isquios.jpg',pantorrilla:'foto-pantorrilla.jpg',tronco:'foto-tronco.jpg'};
 function tieneFoto(ej){return !!FOTOS[ej.id];}
 function visual(ej,animar){
   const f=FOTOS[ej.id];
