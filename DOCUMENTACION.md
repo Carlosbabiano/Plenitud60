@@ -14,9 +14,12 @@ Se actualiza en cada cambio.
 
 - **Un único fichero**: `index.html` contiene el HTML, el CSS (dentro de `<style>`) y
   todo el JavaScript (dentro de `<script>`). No hay dependencias externas.
-- **Imágenes**: fotos reales de algunos ejercicios (`foto-*.png`) e iconos
-  (`icono*.png`, `apple-touch-icon.png`). El resto de ejercicios usan figuras
-  dibujadas con SVG dentro del propio código.
+- **Imágenes**: avatares (generados con IA, mismo personaje) de los ejercicios
+  (`foto-*.jpg`, redimensionados a 760 px de alto y ~20 KB cada uno) e iconos
+  (`icono*.png`, `apple-touch-icon.png`). Los 20 avatares cubren todos los
+  ejercicios **salvo `silla`** (levantarse sin manos), que sigue usando la figura
+  SVG. La lista de qué imagen usa cada ejercicio está en el objeto `FOTOS` de
+  `index.html`; si un ejercicio no está en `FOTOS`, se dibuja con SVG.
 - **`manifest.json`**: configuración de la PWA (nombre, iconos, color).
 
 ### Secciones de la app (pestañas inferiores)
