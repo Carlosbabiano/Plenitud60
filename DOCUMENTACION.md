@@ -24,7 +24,11 @@ Se actualiza en cada cambio.
 
 ### Secciones de la app (pestañas inferiores)
 1. **Rutinas** — rutina de hoy según el plan semanal, rutinas pendientes y lista de
-   todas las rutinas.
+   todas las rutinas. Al final incluye la sección desplegable **«¿Por qué estos
+   ejercicios?»** (4 pilares —fuerza, cardio, equilibrio, flexibilidad—, criterios de
+   selección y en qué se basa, todo apoyado en la guía de actividad física de la OMS).
+   Es HTML estático dentro de `#p-rutinas`; cada bloque abre/cierra con un `onclick`
+   que alterna la clase `open` del `.acc` (mismo estilo que los acordeones de Nutrición).
 2. **Ejercicios** — catálogo de ejercicios por categoría (Fuerza, Cardio, Equilibrio,
    Flexibilidad) con su ficha de detalle.
 3. **Progreso** — sesiones, racha, objetivos OMS e historial.
