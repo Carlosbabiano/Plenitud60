@@ -201,22 +201,32 @@ sube en naranja) y una **gráfica de línea** con los últimos registros.
 
 **13. Marcas personales por ejercicio (supérate a ti mismo)**
 Registro **opcional** para intentar superarse en cada ejercicio (independiente del futuro
-ranking del grupo, que irá solo por constancia). De momento cubre los **ejercicios de
-repeticiones** (los de tiempo/segundos llegarán en una segunda fase).
-- **Al entrenar:** en la **última serie** de un ejercicio de repeticiones (o en los de serie
-  única) aparece un contador prerrellenado con lo que hiciste la última vez (o las
-  repeticiones objetivo). Si ya tienes récord, se muestra («🏆 Tu récord: N — ¿lo superas
-  hoy?»). El botón **«Terminar ejercicio ✓»** guarda la cifra mostrada; hay un enlace
-  **«seguir sin apuntar»** para saltarse el registro. No añade ningún paso extra: quien no
-  quiera apuntar, sigue como siempre.
+ranking del grupo, que irá solo por constancia). Cubre los **ejercicios de repeticiones**
+(repeticiones) y los **de aguante** (segundos). El **cardio de tiempo** (caminar, marcha,
+escaleras, bici) queda fuera: solo constancia, porque el temporizador cuenta una duración
+fija y no hay una marca real que superar.
+- **Al entrenar (repeticiones):** en la **última serie** (o en los de serie única) aparece un
+  contador prerrellenado con lo que hiciste la última vez (o las repeticiones objetivo). Si
+  ya tienes récord, se muestra («🏆 Tu récord: N — ¿lo superas hoy?»). El botón **«Terminar
+  ejercicio ✓»** guarda la cifra; hay un enlace **«seguir sin apuntar»** para saltarlo.
+- **Al entrenar (aguante/segundos):** en el **último lado** del ejercicio aparece el contador
+  en segundos (de 5 en 5), prerrellenado con la duración de la dosis. Al terminar (manual o
+  cuando el temporizador llega a 0) se guarda automáticamente. Si aguantaste más, súbelo con
+  «+» antes de acabar. El flujo sigue siendo manos libres.
 - **En Progreso:** sección **«Mis marcas · supérate»** con una tarjeta por ejercicio: récord
-  actual, variación desde el primer registro y una **gráfica de línea** de la evolución.
-- Solo aplica a ejercicios de repeticiones (`mideMarca()` = `!esTiempo()`). La unidad se
-  deduce del texto de `REPS_INFO` (rep / pasos / círculos) y el valor inicial del contador,
-  del mayor número del rango (`objetivoReps()`).
+  actual, variación desde el primer registro y una **gráfica** de evolución (con un solo
+  registro se ve un punto; con dos o más, la línea).
+- **Backfill:** al abrir la app por primera vez tras esta mejora, las **sesiones ya hechas**
+  se rellenan una sola vez con la dosis objetivo de cada ejercicio (`backfillMarcas()`), para
+  que la gráfica arranque con historial. No pisa marcas reales ya apuntadas ese día; se marca
+  con `plenitud60_marcas_backfill` para no repetirse.
+- Aplica a repeticiones y aguante (`mideMarca()` = `!EJ_CARDIO_TIEMPO.has(id)`). La unidad y
+  el valor inicial salen de `unidadMarca()` / `objetivoMarca()` (segundos = `ej.tiempo`;
+  repeticiones = mayor número de `REPS_INFO`).
 - Código: `getMarcas()`, `setMarcas()`, `addMarca()`, `recordDe()`, `ultimaMarca()`,
-  `mideMarca()`, `objetivoReps()`, `unidadMarca()`, `mStepper()`, `mAdj()`,
-  `finalizarReps()`, `pintarMarcas()`, `miniGrafica()`.
+  `backfillMarcas()`, `mideMarca()`, `objetivoReps()`, `objetivoMarca()`, `unidadMarca()`,
+  `pasoMarca()`, `mStepper()`, `mAdj()`, `finalizarReps()` (reps), `avanzarTiempo()` (guarda
+  el aguante), `pintarMarcas()`, `miniGrafica()`.
 
 ---
 
