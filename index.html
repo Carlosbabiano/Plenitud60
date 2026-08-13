@@ -211,6 +211,27 @@
   .peso-add{display:flex;gap:8px;margin-top:12px;}
   .peso-add input{flex:1;min-width:0;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;background:#fff;}
   .peso-add button{flex:0 0 auto;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-weight:700;font-size:15px;cursor:pointer;}
+  /* registro de marcas (superarse) — dentro del reproductor */
+  .mreg{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);}
+  .mrec{font-size:14.5px;font-weight:700;color:var(--primary);margin-bottom:8px;}
+  .mreg-lab{font-size:15px;color:var(--ink);font-weight:600;margin-bottom:10px;}
+  .mreg-lab span{color:var(--muted);font-weight:500;}
+  .mstep{display:flex;align-items:center;justify-content:center;gap:18px;}
+  .mstep button{width:54px;height:54px;border-radius:50%;border:1.5px solid var(--line);background:#fff;color:var(--primary);font-size:30px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+  .mstep button:active{background:var(--primary-l);}
+  .mval{min-width:100px;text-align:center;font-size:17px;color:var(--muted);}
+  .mval b{font-size:36px;color:var(--ink);font-weight:800;}
+  .msin{display:block;margin:12px auto 0;background:none;border:none;color:var(--muted);font-size:13.5px;text-decoration:underline;cursor:pointer;}
+  /* tarjetas de marcas en la pestaña Progreso */
+  .marca{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:12px;}
+  .marca-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+  .marca-nom{font-size:16px;font-weight:700;color:var(--ink);}
+  .marca-cifras{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:2px;}
+  .marca-rec{font-size:14px;color:var(--muted);}
+  .marca-rec b{font-size:30px;color:var(--primary);font-weight:800;}
+  .marca-rec span{font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+  .marca-diff{font-size:13.5px;font-weight:700;color:var(--muted);}
+  .marca-diff.sube{color:var(--flex);}
 
   /* nutrición */
   .lead{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-sm);font-size:15px;color:var(--muted);}
@@ -397,6 +418,8 @@
     <div id="grafica"></div>
     <h2 class="sec">Logros</h2>
     <div id="logros"></div>
+    <h2 class="sec">Mis marcas · supérate</h2>
+    <div id="marcasCard"></div>
     <h2 class="sec">Mi peso</h2>
     <div id="pesoCard"></div>
     <h2 class="sec">Actividad reciente</h2>
@@ -754,6 +777,23 @@ const REPS_INFO={
 function seriesDe(ej){return (REPS_INFO[ej.id]&&REPS_INFO[ej.id].series)||1;}
 function repsDe(ej){return (REPS_INFO[ej.id]&&REPS_INFO[ej.id].reps)||ej.dosis;}
 
+/* ¿Este ejercicio admite "marca" personal para superarse? De momento, los de
+   repeticiones (los de tiempo se cronometran; sus segundos llegarán más adelante). */
+function mideMarca(ej){return !esTiempo(ej);}
+/* Nº de repeticiones objetivo, para prerrellenar el registro: el mayor del rango. */
+function objetivoReps(ej){
+  const s=(REPS_INFO[ej.id]&&REPS_INFO[ej.id].reps)||ej.dosis||'';
+  const nums=(String(s).match(/\d+/g)||[]).map(Number);
+  return nums.length?Math.max(...nums):10;
+}
+/* Palabra corta para la unidad de la marca (rep / pasos / círculos). */
+function unidadMarca(ej){
+  const s=(REPS_INFO[ej.id]&&REPS_INFO[ej.id].reps)||'';
+  if(/paso/i.test(s))return'pasos';
+  if(/c[íi]rculo/i.test(s))return'círculos';
+  return'rep';
+}
+
 /* Ejercicios de tiempo que se hacen por los dos lados: el contador corre una vez por lado. */
 const LADOS={
   unapierna:['Pierna derecha','Pierna izquierda'],
@@ -823,6 +863,22 @@ function addPeso(valor,fecha){
   setPesos(a);
   const p=getPerfil(); p.peso=String(kg); setPerfil(p); // sincroniza el peso del perfil (IMC/proteína)
   return true;
+}
+
+/* ---- Marcas personales por ejercicio (superarse: repeticiones) ----
+   Estructura: { sentadilla:[{fecha, v}], ... }  v = repeticiones hechas. */
+const KEY_MARCAS='plenitud60_marcas';
+function getMarcas(){try{const o=JSON.parse(localStorage.getItem(KEY_MARCAS));return(o&&typeof o==='object'&&!Array.isArray(o))?o:{};}catch(e){return{};}}
+function setMarcas(o){localStorage.setItem(KEY_MARCAS,JSON.stringify(o));}
+function recordDe(id){return (getMarcas()[id]||[]).reduce((m,x)=>Math.max(m,x.v),0);}
+function ultimaMarca(id){const a=getMarcas()[id]||[];return a.length?a[a.length-1].v:null;}
+function addMarca(id,v){
+  v=Math.round(Number(v)); if(!(v>0)||v>2000) return null;
+  const o=getMarcas(), arr=o[id]||[], record=arr.reduce((m,x)=>Math.max(m,x.v),0);
+  arr.push({fecha:new Date().toISOString(),v});
+  if(arr.length>60) arr.splice(0,arr.length-60); // no dejamos crecer sin fin
+  o[id]=arr; setMarcas(o);
+  return {v, esRecord:v>record, record:Math.max(record,v)};
 }
 
 /* ==================== RUTINAS ==================== */
@@ -1029,7 +1085,7 @@ function pintarProgreso(){
     const dias=diasUnicos(semana.filter(x=>x.cat===m.cat)),pct=Math.min(100,Math.round(dias/m.obj*100)),ok=dias>=m.obj;
     return `<div class="goal ${m.cat} ${ok?'ok':''}"><div class="top"><span class="name">${m.n}</span><span class="count">${dias} / ${m.obj} días</span></div><div class="bar"><i style="width:${pct}%"></i></div><div class="rec">${m.rec}</div></div>`;
   }).join('');
-  pintarMotiva(h);pintarGrafica(h);pintarLogros(h);pintarPeso();
+  pintarMotiva(h);pintarGrafica(h);pintarLogros(h);pintarMarcas();pintarPeso();
   const cont=document.getElementById('historial');
   if(!h.length){cont.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="#0f5f57" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-6"/></svg><div>Aún no hay actividad registrada.<br>Empieza por tu primera rutina de hoy.</div></div>`;return;}
   const dias={};h.slice().reverse().forEach(x=>{const k=new Date(x.fecha).toDateString();(dias[k]=dias[k]||[]).push(x);});
@@ -1075,6 +1131,39 @@ function registrarPeso(){
   const inp=document.getElementById('inPesoHoy'); if(!inp)return;
   if(addPeso(inp.value)){inp.value='';toast('Peso registrado ✓');pintarProgreso();}
   else{toast('Escribe un peso válido (kg)');}
+}
+
+/* --- Marcas personales: récord y evolución por ejercicio (supérate) --- */
+function miniGrafica(datos,color){
+  const d=datos.slice(-12);
+  if(d.length<2) return '<div class="peso-nota">Apunta este ejercicio otro día y aquí verás tu evolución.</div>';
+  const W=300,H=90,pad=14;
+  const vs=d.map(x=>x.v), min=Math.min(...vs), max=Math.max(...vs), rango=(max-min)||1;
+  const X=i=>pad+i*(W-2*pad)/(d.length-1), Y=v=>pad+(1-(v-min)/rango)*(H-2*pad);
+  const pts=d.map((x,i)=>`${X(i).toFixed(1)},${Y(x.v).toFixed(1)}`).join(' ');
+  const circ=d.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x.v).toFixed(1)}" r="3" fill="${color}"/>`).join('');
+  return `<svg class="peso-svg" viewBox="0 0 ${W} ${H}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${circ}</svg>`;
+}
+function pintarMarcas(){
+  const box=document.getElementById('marcasCard'); if(!box)return;
+  const o=getMarcas();
+  const ids=Object.keys(o).filter(id=>o[id]&&o[id].length&&EJERCICIOS.some(e=>e.id===id));
+  if(!ids.length){
+    box.innerHTML=`<div class="peso"><div class="peso-vacio">Al terminar un ejercicio de repeticiones puedes apuntar cuántas hiciste. Aquí verás tu récord de cada uno y cómo vas mejorando. ¡A superarte!</div></div>`;
+    return;
+  }
+  // Ordenamos por lo más reciente primero (el último ejercicio que apuntaste arriba).
+  ids.sort((a,b)=>new Date(o[b][o[b].length-1].fecha)-new Date(o[a][o[a].length-1].fecha));
+  box.innerHTML=ids.map(id=>{
+    const ej=EJERCICIOS.find(e=>e.id===id), a=o[id], cv=CVAR[ej.cat], u=unidadMarca(ej);
+    const rec=a.reduce((m,x)=>Math.max(m,x.v),0), ult=a[a.length-1].v, diff=ult-a[0].v, signo=diff>0?'+':'';
+    const difTxt=(a.length>1)?`<span class="marca-diff ${diff>0?'sube':''}">${signo}${diff} ${u} desde el inicio</span>`:`<span class="marca-diff">tu primer registro</span>`;
+    return `<div class="marca">
+      <div class="marca-top"><span class="marca-nom">${ej.nombre}</span><span class="ct" style="background:var(--${cv}-l);color:var(--${cv})">${CATS[ej.cat].n}</span></div>
+      <div class="marca-cifras"><span class="marca-rec"><b>${rec}</b> ${u} <span>récord</span></span>${difTxt}</div>
+      ${miniGrafica(a,`var(--${cv})`)}
+    </div>`;
+  }).join('');
 }
 function borrarTodo(){if(confirm('¿Seguro que quieres borrar todo el historial? No se puede deshacer.')){saveH([]);pintarProgreso();pintarGrid();}}
 
@@ -1302,6 +1391,31 @@ function pDone(markDone){
   irAPaso(RP.i+1);
 }
 function pPause(){RP.paused=!RP.paused;pRenderRun();guardarSesion();}
+/* --- Registro de marca al terminar un ejercicio de repeticiones (opcional) --- */
+/* Bloque con el récord y un contador prerrellenado a lo último que hiciste. */
+function mStepper(ej){
+  const rec=recordDe(ej.id), u=unidadMarca(ej);
+  RP.mv=ultimaMarca(ej.id)||objetivoReps(ej);
+  const recTxt=rec?`<div class="mrec">🏆 Tu récord: <b>${rec}</b> ${u} — ¿lo superas hoy?</div>`:'';
+  return `<div class="mreg">${recTxt}
+    <div class="mreg-lab">¿Cuántas has hecho? <span>(opcional)</span></div>
+    <div class="mstep">
+      <button type="button" onclick="mAdj(-1)" aria-label="Menos">−</button>
+      <div class="mval"><b id="mVal">${RP.mv}</b> <span>${u}</span></div>
+      <button type="button" onclick="mAdj(1)" aria-label="Más">+</button>
+    </div>
+    <button type="button" class="msin" onclick="finalizarReps(true)">seguir sin apuntar</button>
+  </div>`;
+}
+function mAdj(d){RP.mv=Math.max(0,(RP.mv||0)+d);const el=document.getElementById('mVal');if(el)el.textContent=RP.mv;}
+/* Guarda la marca mostrada (salvo que se pida saltarla) y pasa al siguiente ejercicio. */
+function finalizarReps(saltar){
+  if(!saltar){
+    const ej=RP.steps[RP.i].ej, r=addMarca(ej.id,RP.mv);
+    if(r) toast(r.esRecord?('🏆 ¡Nuevo récord: '+r.v+'!'):('Marca guardada: '+r.v));
+  }
+  pDone(true);
+}
 /* Pantalla de explicación previa a cada ejercicio (con botón Empezar) */
 function pRenderIntro(){
   const el=document.getElementById('player'), st=RP.steps[RP.i], ej=st.ej, cv=CVAR[ej.cat];
@@ -1342,12 +1456,14 @@ function pRenderRun(){
     const dots=Array.from({length:RP.seriesTotal},(_,k)=>{const n=k+1,c=n<RP.serie?'on':(n===RP.serie?'now':'');return `<span class="pdot ${c}"></span>`;}).join('');
     centro=`<div class="preps">${repsDe(ej)}</div>
       <div class="pserie">Serie <b>${RP.serie}</b> de ${RP.seriesTotal}</div>
-      <div class="pdots">${dots}</div>`;
-    botones=`<button class="bp" onclick="serieHecha()">${ultima?'Terminar ejercicio ✓':'Serie hecha ✓'}</button>
+      <div class="pdots">${dots}</div>
+      ${ultima&&mideMarca(ej)?mStepper(ej):''}`;
+    botones=`<button class="bp" onclick="${ultima?'finalizarReps(false)':'serieHecha()'}">${ultima?'Terminar ejercicio ✓':'Serie hecha ✓'}</button>
       <div class="prow">${atras}<button onclick="pDone(false)">Saltar ejercicio</button></div>`;
   } else {
-    centro=`<div class="preps">${repsDe(ej)}</div>`;
-    botones=`<button class="bp" onclick="pDone(true)">Hecho ✓</button>
+    centro=`<div class="preps">${repsDe(ej)}</div>
+      ${mideMarca(ej)?mStepper(ej):''}`;
+    botones=`<button class="bp" onclick="${mideMarca(ej)?'finalizarReps(false)':'pDone(true)'}">Hecho ✓</button>
       <div class="prow">${atras}<button onclick="pDone(false)">Saltar</button></div>`;
   }
   el.innerHTML=`
