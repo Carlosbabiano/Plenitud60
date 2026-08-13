@@ -777,22 +777,30 @@ const REPS_INFO={
 function seriesDe(ej){return (REPS_INFO[ej.id]&&REPS_INFO[ej.id].series)||1;}
 function repsDe(ej){return (REPS_INFO[ej.id]&&REPS_INFO[ej.id].reps)||ej.dosis;}
 
-/* ¿Este ejercicio admite "marca" personal para superarse? De momento, los de
-   repeticiones (los de tiempo se cronometran; sus segundos llegarán más adelante). */
-function mideMarca(ej){return !esTiempo(ej);}
+/* Ejercicios de tiempo tipo "cardio": se cronometran pero no son una marca a superar
+   (el temporizador cuenta una duración fija). Solo constancia, no récord. */
+const EJ_CARDIO_TIEMPO=new Set(['caminar','marcha','escaleras','bici']);
+/* ¿Este ejercicio admite "marca" personal para superarse? Los de repeticiones y los de
+   aguante (segundos). El cardio de tiempo queda fuera (va solo por constancia). */
+function mideMarca(ej){return !EJ_CARDIO_TIEMPO.has(ej.id);}
 /* Nº de repeticiones objetivo, para prerrellenar el registro: el mayor del rango. */
 function objetivoReps(ej){
   const s=(REPS_INFO[ej.id]&&REPS_INFO[ej.id].reps)||ej.dosis||'';
   const nums=(String(s).match(/\d+/g)||[]).map(Number);
   return nums.length?Math.max(...nums):10;
 }
-/* Palabra corta para la unidad de la marca (rep / pasos / círculos). */
+/* Valor con el que se prerrellena/rellena la marca: segundos (aguante) o repeticiones. */
+function objetivoMarca(ej){return esTiempo(ej)?(ej.tiempo||30):objetivoReps(ej);}
+/* Unidad corta de la marca: segundos (tiempo) o rep/pasos/círculos (repeticiones). */
 function unidadMarca(ej){
+  if(esTiempo(ej))return's';
   const s=(REPS_INFO[ej.id]&&REPS_INFO[ej.id].reps)||'';
   if(/paso/i.test(s))return'pasos';
   if(/c[íi]rculo/i.test(s))return'círculos';
   return'rep';
 }
+/* Incremento del contador al pulsar +/−: de 5 en 5 los segundos, de 1 en 1 las rep. */
+function pasoMarca(ej){return esTiempo(ej)?5:1;}
 
 /* Ejercicios de tiempo que se hacen por los dos lados: el contador corre una vez por lado. */
 const LADOS={
@@ -879,6 +887,25 @@ function addMarca(id,v){
   if(arr.length>60) arr.splice(0,arr.length-60); // no dejamos crecer sin fin
   o[id]=arr; setMarcas(o);
   return {v, esRecord:v>record, record:Math.max(record,v)};
+}
+/* Rellena, una sola vez, las marcas de las sesiones ya hechas con la dosis objetivo,
+   para que la gráfica arranque con historial (el usuario hizo las repeticiones/segundos
+   recomendados). No pisa marcas reales ya apuntadas ese día. */
+function backfillMarcas(){
+  try{
+    if(localStorage.getItem('plenitud60_marcas_backfill'))return;
+    const o=getMarcas();
+    read().forEach(x=>{
+      const ej=EJERCICIOS.find(e=>e.id===x.id);
+      if(!ej||!mideMarca(ej))return;
+      const arr=o[x.id]||(o[x.id]=[]), dia=new Date(x.fecha).toDateString();
+      if(arr.some(m=>new Date(m.fecha).toDateString()===dia))return;
+      arr.push({fecha:x.fecha,v:objetivoMarca(ej),auto:true});
+    });
+    Object.keys(o).forEach(id=>o[id].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)));
+    setMarcas(o);
+    localStorage.setItem('plenitud60_marcas_backfill','1');
+  }catch(e){}
 }
 
 /* ==================== RUTINAS ==================== */
@@ -1136,13 +1163,14 @@ function registrarPeso(){
 /* --- Marcas personales: récord y evolución por ejercicio (supérate) --- */
 function miniGrafica(datos,color){
   const d=datos.slice(-12);
-  if(d.length<2) return '<div class="peso-nota">Apunta este ejercicio otro día y aquí verás tu evolución.</div>';
+  if(!d.length) return '';
   const W=300,H=90,pad=14;
   const vs=d.map(x=>x.v), min=Math.min(...vs), max=Math.max(...vs), rango=(max-min)||1;
-  const X=i=>pad+i*(W-2*pad)/(d.length-1), Y=v=>pad+(1-(v-min)/rango)*(H-2*pad);
-  const pts=d.map((x,i)=>`${X(i).toFixed(1)},${Y(x.v).toFixed(1)}`).join(' ');
+  const X=d.length>1?(i=>pad+i*(W-2*pad)/(d.length-1)):(()=>W/2);
+  const Y=v=>pad+(1-(v-min)/rango)*(H-2*pad);
   const circ=d.map((x,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(x.v).toFixed(1)}" r="3" fill="${color}"/>`).join('');
-  return `<svg class="peso-svg" viewBox="0 0 ${W} ${H}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${circ}</svg>`;
+  const linea=d.length>1?`<polyline points="${d.map((x,i)=>`${X(i).toFixed(1)},${Y(x.v).toFixed(1)}`).join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`:'';
+  return `<svg class="peso-svg" viewBox="0 0 ${W} ${H}">${linea}${circ}</svg>`;
 }
 function pintarMarcas(){
   const box=document.getElementById('marcasCard'); if(!box)return;
@@ -1373,11 +1401,15 @@ function serieHecha(){
 }
 /* En ejercicios de tiempo por lados, cambia de lado; si era el último, pasa al siguiente ejercicio. */
 function avanzarTiempo(){
-  const lados=ladosDe(RP.steps[RP.i].ej);
+  const ej=RP.steps[RP.i].ej, lados=ladosDe(ej);
   if(lados && RP.lado<lados.length-1){
     RP.lado++;RP.t=RP.steps[RP.i].d;RP.paused=false;beep();pRenderRun();guardarSesion();
     hablar(lados[RP.lado]);
-  } else { pDone(true); }
+  } else {
+    // Al terminar un ejercicio de aguante, guardamos los segundos (récord personal).
+    if(mideMarca(ej)){const r=addMarca(ej.id,RP.mv||objetivoMarca(ej));if(r)toast(r.esRecord?('🏆 ¡Nuevo récord: '+r.v+' s!'):('Marca guardada: '+r.v+' s'));}
+    pDone(true);
+  }
 }
 function pTick(){if(RP.paused||RP.phase!=='run')return;RP.t--;if(RP.t<=0){avanzarTiempo();return;}pTime();if(RP.t<=3)hablar(String(RP.t));guardarSesion();}
 function pTime(){const el=document.getElementById('pTime');if(el)el.textContent=fmt(Math.max(0,RP.t));}
@@ -1394,20 +1426,22 @@ function pPause(){RP.paused=!RP.paused;pRenderRun();guardarSesion();}
 /* --- Registro de marca al terminar un ejercicio de repeticiones (opcional) --- */
 /* Bloque con el récord y un contador prerrellenado a lo último que hiciste. */
 function mStepper(ej){
-  const rec=recordDe(ej.id), u=unidadMarca(ej);
-  RP.mv=ultimaMarca(ej.id)||objetivoReps(ej);
+  const rec=recordDe(ej.id), u=unidadMarca(ej), tiempo=esTiempo(ej);
+  RP.mv=ultimaMarca(ej.id)||objetivoMarca(ej);
+  RP.mstep=pasoMarca(ej);
   const recTxt=rec?`<div class="mrec">🏆 Tu récord: <b>${rec}</b> ${u} — ¿lo superas hoy?</div>`:'';
+  const lab=tiempo?'¿Cuántos segundos has aguantado?':'¿Cuántas has hecho?';
   return `<div class="mreg">${recTxt}
-    <div class="mreg-lab">¿Cuántas has hecho? <span>(opcional)</span></div>
+    <div class="mreg-lab">${lab} <span>(opcional)</span></div>
     <div class="mstep">
       <button type="button" onclick="mAdj(-1)" aria-label="Menos">−</button>
       <div class="mval"><b id="mVal">${RP.mv}</b> <span>${u}</span></div>
       <button type="button" onclick="mAdj(1)" aria-label="Más">+</button>
     </div>
-    <button type="button" class="msin" onclick="finalizarReps(true)">seguir sin apuntar</button>
+    ${tiempo?'':'<button type="button" class="msin" onclick="finalizarReps(true)">seguir sin apuntar</button>'}
   </div>`;
 }
-function mAdj(d){RP.mv=Math.max(0,(RP.mv||0)+d);const el=document.getElementById('mVal');if(el)el.textContent=RP.mv;}
+function mAdj(d){RP.mv=Math.max(0,(RP.mv||0)+d*(RP.mstep||1));const el=document.getElementById('mVal');if(el)el.textContent=RP.mv;}
 /* Guarda la marca mostrada (salvo que se pida saltarla) y pasa al siguiente ejercicio. */
 function finalizarReps(saltar){
   if(!saltar){
@@ -1448,7 +1482,7 @@ function pRenderRun(){
   if(tiempo){
     const lados=ladosDe(ej), hayLados=lados&&lados.length>1;
     const ultimo=!hayLados||RP.lado>=lados.length-1;
-    centro=`${hayLados?`<div class="plado">${lados[RP.lado]} · ${RP.lado+1} de ${lados.length}</div>`:''}<div class="ptime" id="pTime">${fmt(RP.t)}</div>`;
+    centro=`${hayLados?`<div class="plado">${lados[RP.lado]} · ${RP.lado+1} de ${lados.length}</div>`:''}<div class="ptime" id="pTime">${fmt(RP.t)}</div>${ultimo&&mideMarca(ej)?mStepper(ej):''}`;
     botones=`<button class="bp" onclick="avanzarTiempo()">${ultimo?'Hecho ✓':'Siguiente lado ✓'}</button>
       <div class="prow">${atras}<button onclick="pPause()">${RP.paused?'▶ Reanudar':'⏸ Pausar'}</button><button onclick="pDone(false)">Saltar</button></div>`;
   } else if(RP.seriesTotal>1){
@@ -1516,6 +1550,7 @@ function toast(txt){const t=document.getElementById('toast');document.getElement
   document.getElementById('saludo').textContent=s;})();
 
 actualizarAlertaPerfil();
+backfillMarcas();
 pintarRutinas();
 </script>
 </body>
