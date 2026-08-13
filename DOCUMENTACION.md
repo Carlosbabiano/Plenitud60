@@ -199,6 +199,25 @@ sube en naranja) y una **gráfica de línea** con los últimos registros.
   añade al histórico.
 - Código: `getPesos()`, `addPeso()`, `pintarPeso()`, `graficaPeso()`, `registrarPeso()`.
 
+**13. Marcas personales por ejercicio (supérate a ti mismo)**
+Registro **opcional** para intentar superarse en cada ejercicio (independiente del futuro
+ranking del grupo, que irá solo por constancia). De momento cubre los **ejercicios de
+repeticiones** (los de tiempo/segundos llegarán en una segunda fase).
+- **Al entrenar:** en la **última serie** de un ejercicio de repeticiones (o en los de serie
+  única) aparece un contador prerrellenado con lo que hiciste la última vez (o las
+  repeticiones objetivo). Si ya tienes récord, se muestra («🏆 Tu récord: N — ¿lo superas
+  hoy?»). El botón **«Terminar ejercicio ✓»** guarda la cifra mostrada; hay un enlace
+  **«seguir sin apuntar»** para saltarse el registro. No añade ningún paso extra: quien no
+  quiera apuntar, sigue como siempre.
+- **En Progreso:** sección **«Mis marcas · supérate»** con una tarjeta por ejercicio: récord
+  actual, variación desde el primer registro y una **gráfica de línea** de la evolución.
+- Solo aplica a ejercicios de repeticiones (`mideMarca()` = `!esTiempo()`). La unidad se
+  deduce del texto de `REPS_INFO` (rep / pasos / círculos) y el valor inicial del contador,
+  del mayor número del rango (`objetivoReps()`).
+- Código: `getMarcas()`, `setMarcas()`, `addMarca()`, `recordDe()`, `ultimaMarca()`,
+  `mideMarca()`, `objetivoReps()`, `unidadMarca()`, `mStepper()`, `mAdj()`,
+  `finalizarReps()`, `pintarMarcas()`, `miniGrafica()`.
+
 ---
 
 ## Datos guardados en el teléfono (localStorage)
@@ -211,6 +230,7 @@ sube en naranja) y una **gráfica de línea** con los últimos registros.
 | `plenitud60_recuperados` | Días de esta semana ya recuperados. |
 | `plenitud60_sesion` | Sesión de ejercicio en curso (para reanudar si se cierra la app). |
 | `plenitud60_pesos` | Histórico de peso (para ver la evolución). |
+| `plenitud60_marcas` | Marcas personales por ejercicio (repeticiones, para superarse). |
 | `plenitud60_voz` | Si la voz que anuncia los ejercicios está activada. |
 
 ---
