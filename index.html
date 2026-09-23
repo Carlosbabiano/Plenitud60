@@ -223,6 +223,36 @@
   .mval b{font-size:36px;color:var(--ink);font-weight:800;}
   .msin{display:block;margin:12px auto 0;background:none;border:none;color:var(--muted);font-size:13.5px;text-decoration:underline;cursor:pointer;}
   /* tarjetas de marcas en la pestaña Progreso */
+  /* grupo · ranking de constancia */
+  .grupo{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);}
+  .grupo-intro{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;color:var(--ink);margin-bottom:14px;line-height:1.5;}
+  .grupo-emo{font-size:30px;line-height:1;flex:0 0 auto;}
+  .grupo-tit{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:10px;}
+  .grupo-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;}
+  .grupo-head .grupo-tit{margin-bottom:2px;}
+  .grupo-cod{font-size:13.5px;color:var(--muted);} .grupo-cod b{color:var(--primary);letter-spacing:1px;}
+  .grupo-share{flex:0 0 auto;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-weight:650;font-size:13.5px;cursor:pointer;}
+  .grupo-err{color:#b02a37;font-size:14px;font-weight:600;margin:-4px 0 10px;} .grupo-err:empty{display:none;}
+  .grupo-cargando{color:var(--muted);font-size:14.5px;text-align:center;padding:10px;}
+  .link-suave{background:none;border:none;color:var(--primary);font-size:14px;font-weight:600;cursor:pointer;padding:10px 4px 2px;display:block;margin:0 auto;}
+  .avpick{display:flex;flex-wrap:wrap;gap:8px;}
+  .av{width:46px;height:46px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+  .av.on{border-color:var(--primary);background:var(--primary-l);}
+  .rk-list{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+  .rk-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fff;}
+  .rk-row.yo{border-color:var(--primary);background:var(--primary-l);}
+  .rk-pos{width:30px;text-align:center;font-size:22px;flex:0 0 auto;} .rk-num{font-size:15px;font-weight:800;color:var(--muted);}
+  .rk-av{font-size:26px;flex:0 0 auto;line-height:1;}
+  .rk-info{flex:1;min-width:0;} .rk-nom{font-weight:700;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rk-tu{font-size:11px;background:var(--primary);color:#fff;border-radius:10px;padding:1px 7px;margin-left:4px;vertical-align:middle;}
+  .rk-sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .rk-dias{text-align:center;flex:0 0 auto;line-height:1;} .rk-dias b{display:block;font-size:26px;font-weight:800;color:var(--primary);} .rk-dias span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .rk-aviso{font-size:12.5px;color:var(--fuerza);background:var(--fuerza-l);border-radius:10px;padding:6px 10px;margin-top:6px;}
+  .rk-vacio{color:var(--muted);font-size:14px;text-align:center;padding:8px;}
+  .rk-nota{font-size:13px;color:var(--muted);line-height:1.45;}
+  .rk-pie{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);}
+  .rk-pie .link-suave{margin:0;padding:4px 0;font-size:13px;display:inline;}
+  .rk-pie b{letter-spacing:1px;color:var(--ink);}
   .marca{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:12px;}
   .marca-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
   .marca-nom{font-size:16px;font-weight:700;color:var(--ink);}
@@ -416,6 +446,8 @@
     <div id="goals"></div>
     <h2 class="sec">Tu evolución · últimas 8 semanas</h2>
     <div id="grafica"></div>
+    <h2 class="sec">Mi grupo · constancia</h2>
+    <div id="grupoCard"></div>
     <h2 class="sec">Logros</h2>
     <div id="logros"></div>
     <h2 class="sec">Mis marcas · supérate</h2>
@@ -841,7 +873,10 @@ const NUTRI=[
 const KEY='plenitud60_historial', KEYP='plenitud60_perfil';
 const read=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}};
 const saveH=a=>localStorage.setItem(KEY,JSON.stringify(a));
-function registrar(ej){const h=read();h.push({id:ej.id,nombre:ej.nombre,cat:ej.cat,fecha:new Date().toISOString()});saveH(h);}
+function registrar(ej){const h=read();h.push({id:ej.id,nombre:ej.nombre,cat:ej.cat,fecha:new Date().toISOString()});saveH(h);
+  // Si está en un grupo, apunta el día de hoy para el ranking de constancia (se sube cuando haya conexión).
+  if(getGrupo()){encolarDias([fechaISO(new Date())]);sincronizarDias();}
+}
 const hoyStr=()=>new Date().toDateString();
 const hechosHoy=()=>read().filter(x=>new Date(x.fecha).toDateString()===hoyStr()).map(x=>x.id);
 function getPerfil(){try{return Object.assign({altura:'',peso:'',condiciones:[],equipo:null},JSON.parse(localStorage.getItem(KEYP))||{})}catch(e){return{altura:'',peso:'',condiciones:[],equipo:null}}}
@@ -1112,7 +1147,7 @@ function pintarProgreso(){
     const dias=diasUnicos(semana.filter(x=>x.cat===m.cat)),pct=Math.min(100,Math.round(dias/m.obj*100)),ok=dias>=m.obj;
     return `<div class="goal ${m.cat} ${ok?'ok':''}"><div class="top"><span class="name">${m.n}</span><span class="count">${dias} / ${m.obj} días</span></div><div class="bar"><i style="width:${pct}%"></i></div><div class="rec">${m.rec}</div></div>`;
   }).join('');
-  pintarMotiva(h);pintarGrafica(h);pintarLogros(h);pintarMarcas();pintarPeso();
+  pintarMotiva(h);pintarGrafica(h);pintarGrupo();pintarLogros(h);pintarMarcas();pintarPeso();
   const cont=document.getElementById('historial');
   if(!h.length){cont.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="#0f5f57" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 16v-4M12 16V8M16 16v-6"/></svg><div>Aún no hay actividad registrada.<br>Empieza por tu primera rutina de hoy.</div></div>`;return;}
   const dias={};h.slice().reverse().forEach(x=>{const k=new Date(x.fecha).toDateString();(dias[k]=dias[k]||[]).push(x);});
@@ -1124,6 +1159,153 @@ function pintarProgreso(){
   }).join('')+`<button class="link-borrar" onclick="borrarTodo()">Borrar todo el historial</button>`;
 }
 function calcularRacha(h){if(!h.length)return 0;const set=new Set(h.map(x=>new Date(x.fecha).toDateString()));let r=0;const d=new Date();if(!set.has(d.toDateString()))d.setDate(d.getDate()-1);while(set.has(d.toDateString())){r++;d.setDate(d.getDate()-1);}return r;}
+
+/* ==================== MI GRUPO · RANKING DE CONSTANCIA (Supabase) ====================
+   Solo cuenta la constancia: un punto por cada día que la persona se mueve, sin importar
+   cuántas sesiones, cargas o repeticiones. Al servidor solo se envía "este día me moví".
+   Las tablas viven en el esquema "plenitud" del proyecto Supabase y se accede únicamente
+   por las funciones plenitud_* (RPC); cada persona se identifica con un token secreto
+   guardado en su móvil y tiene una clave personal de 6 caracteres para cambiar de móvil. */
+const SB_URL='https://ogpahgldmeeltqdttkjk.supabase.co';
+const SB_KEY='sb_publishable_qZ4d1aCVTE93O7J9YfFqeA_M1aFFdTh';
+const KEY_GRUPO='plenitud60_grupo', KEY_COLA='plenitud60_cola_dias', KEY_RANK='plenitud60_ranking';
+const AVATARES=['🙂','😎','🌻','🐢','🦉','🌳','🚶','🚴','💪','🧘','🌞','🍀'];
+async function sbRpc(fn,args){
+  let r;
+  try{ r=await fetch(SB_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},body:JSON.stringify(args||{})}); }
+  catch(e){ throw new Error('Sin conexión. Inténtalo cuando tengas internet.'); }
+  const j=await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((j&&j.message)||'No se pudo conectar con el grupo');
+  return j;
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function getGrupo(){try{const g=JSON.parse(localStorage.getItem(KEY_GRUPO));return(g&&g.token)?g:null;}catch(e){return null;}}
+function setGrupo(g){if(g)localStorage.setItem(KEY_GRUPO,JSON.stringify(g));else localStorage.removeItem(KEY_GRUPO);}
+function fechaISO(d){const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
+function getCola(){try{const a=JSON.parse(localStorage.getItem(KEY_COLA));return Array.isArray(a)?a:[];}catch(e){return[];}}
+function setCola(a){localStorage.setItem(KEY_COLA,JSON.stringify(a));}
+function encolarDias(fechas){const c=getCola();fechas.forEach(f=>{if(!c.includes(f))c.push(f);});setCola(c);}
+function diasDelHistorial(){return [...new Set(read().map(x=>fechaISO(x.fecha)))];}
+/* Sube al grupo los días pendientes. Si falla (sin conexión), quedan en cola para la próxima vez. */
+let sincronizando=false;
+async function sincronizarDias(){
+  const g=getGrupo(), cola=getCola();
+  if(!g||!cola.length||sincronizando)return false;
+  sincronizando=true;
+  try{ await sbRpc('plenitud_subir_dias',{p_token:g.token,p_fechas:cola}); setCola(getCola().filter(f=>!cola.includes(f))); return true; }
+  catch(e){ return false; }
+  finally{ sincronizando=false; }
+}
+function leerRankCache(){try{const c=JSON.parse(localStorage.getItem(KEY_RANK));return(c&&c.datos)?c:null;}catch(e){return null;}}
+
+let grupoModo=null; // null | 'crear' | 'unirme' | 'recuperar' | 'editar'
+function setGrupoModo(m){grupoModo=m;pintarGrupo();}
+function pintarGrupo(){
+  const box=document.getElementById('grupoCard'); if(!box)return;
+  const g=getGrupo();
+  if(!g){ box.innerHTML=(grupoModo&&grupoModo!=='editar')?formGrupo(grupoModo):introGrupo(); return; }
+  if(grupoModo==='editar'){ box.innerHTML=formGrupo('editar'); return; }
+  const c=leerRankCache();
+  box.innerHTML=c?rankingHTML(g,c.datos,c.ts,false):`<div class="grupo"><div class="grupo-cargando">Cargando el ranking de «${esc(g.grupoNombre)}»…</div></div>`;
+  cargarRanking();
+}
+function introGrupo(){
+  return `<div class="grupo">
+    <div class="grupo-intro"><span class="grupo-emo">🤝</span><div><b>Entrena con tus amigos.</b> Un ranking que premia la <b>constancia</b>: cuenta los días que te mueves, no cuánto levantas ni cuántas repeticiones haces. Cada uno con su cuerpo.</div></div>
+    <button class="btn" onclick="setGrupoModo('crear')">Crear un grupo</button>
+    <button class="btn ghost" onclick="setGrupoModo('unirme')">Unirme con un código</button>
+    <button class="link-suave" onclick="setGrupoModo('recuperar')">Ya estaba en un grupo (he cambiado de móvil)</button>
+  </div>`;
+}
+function avataresHTML(sel){return `<div class="avpick" id="avPick">${AVATARES.map(a=>`<button type="button" class="av ${a===sel?'on':''}" onclick="elegirAvatar(this)">${a}</button>`).join('')}</div>`;}
+function elegirAvatar(b){document.querySelectorAll('#avPick .av').forEach(x=>x.classList.remove('on'));b.classList.add('on');}
+function avatarElegido(){const b=document.querySelector('#avPick .av.on');return b?b.textContent:AVATARES[0];}
+function formGrupo(m){
+  const g=getGrupo()||{};
+  const TIT={crear:'Crear un grupo',unirme:'Unirme a un grupo',recuperar:'Recuperar mi cuenta',editar:'Cambiar mi nombre o avatar'};
+  const BTN={crear:'Crear grupo',unirme:'Unirme',recuperar:'Recuperar',editar:'Guardar'};
+  let campos='';
+  if(m==='recuperar'){
+    campos=`<div class="field"><label>Tu clave personal</label><input id="gClave" placeholder="Ej. 387G6W" autocapitalize="characters" autocomplete="off" maxlength="8"><div class="hint">Son 6 letras y números. La verás al final de la tarjeta del grupo en tu otro móvil.</div></div>`;
+  }else{
+    if(m==='crear')campos+=`<div class="field"><label>Nombre del grupo</label><input id="gGrupo" placeholder="Ej. Amigos del parque" maxlength="40"></div>`;
+    if(m==='unirme')campos+=`<div class="field"><label>Código del grupo</label><input id="gCodigo" placeholder="Ej. 5LPVYW" autocapitalize="characters" autocomplete="off" maxlength="8"><div class="hint">Te lo pasa quien creó el grupo.</div></div>`;
+    campos+=`<div class="field"><label>Tu nombre</label><input id="gNombre" placeholder="Como te llaman tus amigos" maxlength="30" value="${esc(m==='editar'?g.nombre:'')}"></div>
+      <div class="field"><label>Elige tu avatar</label>${avataresHTML(m==='editar'&&AVATARES.includes(g.avatar)?g.avatar:AVATARES[0])}</div>`;
+  }
+  return `<div class="grupo"><div class="grupo-tit">${TIT[m]}</div>${campos}
+    <div class="grupo-err" id="gErr"></div>
+    <button class="btn" id="gBtn" onclick="enviarGrupo('${m}')">${BTN[m]}</button>
+    <button class="btn ghost" onclick="setGrupoModo(null)">Cancelar</button></div>`;
+}
+async function enviarGrupo(m){
+  const btn=document.getElementById('gBtn'), err=document.getElementById('gErr'), txt=btn.textContent;
+  const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+  err.textContent='';btn.disabled=true;btn.textContent='Un momento…';
+  try{
+    let r, nombre=v('gNombre'), avatar=avatarElegido();
+    if(m!=='recuperar'&&!nombre)throw new Error('Escribe tu nombre');
+    if(m==='crear'){ if(!v('gGrupo'))throw new Error('Ponle un nombre al grupo'); r=await sbRpc('plenitud_crear_grupo',{p_nombre_grupo:v('gGrupo'),p_nombre:nombre,p_avatar:avatar}); }
+    else if(m==='unirme'){ if(!v('gCodigo'))throw new Error('Escribe el código del grupo'); r=await sbRpc('plenitud_unirse',{p_codigo:v('gCodigo'),p_nombre:nombre,p_avatar:avatar}); }
+    else if(m==='recuperar'){ if(!v('gClave'))throw new Error('Escribe tu clave personal'); r=await sbRpc('plenitud_recuperar',{p_clave:v('gClave')}); nombre=r.nombre; avatar=r.avatar; }
+    else { const g=getGrupo(); r=await sbRpc('plenitud_editar',{p_token:g.token,p_nombre:nombre,p_avatar:avatar}); setGrupo(Object.assign(g,{nombre:r.nombre,avatar:r.avatar})); localStorage.removeItem(KEY_RANK); grupoModo=null; toast('Guardado'); pintarGrupo(); return; }
+    setGrupo({token:r.token,clave:r.clave,codigo:r.codigo,grupoNombre:r.grupo_nombre,nombre,avatar});
+    localStorage.removeItem(KEY_RANK);
+    encolarDias(diasDelHistorial()); // sube al grupo los días que ya llevaba hechos en este móvil
+    grupoModo=null;
+    toast(m==='crear'?'Grupo creado':'¡Ya estás en el grupo!');
+    pintarGrupo();
+  }catch(e){ err.textContent=e.message; btn.disabled=false; btn.textContent=txt; }
+}
+async function cargarRanking(){
+  const g=getGrupo(); if(!g)return;
+  await sincronizarDias();
+  const box=document.getElementById('grupoCard');
+  try{
+    const datos=await sbRpc('plenitud_ranking',{p_token:g.token,p_hoy:fechaISO(new Date())});
+    const ts=Date.now(); localStorage.setItem(KEY_RANK,JSON.stringify({datos,ts}));
+    if(box&&getGrupo()&&!grupoModo)box.innerHTML=rankingHTML(g,datos,ts,true);
+  }catch(e){
+    if(!box||!getGrupo()||grupoModo)return;
+    if(e.message==='Sesión no válida'){ setGrupo(null);setCola([]);localStorage.removeItem(KEY_RANK);box.innerHTML=introGrupo();toast('Tu cuenta del grupo ya no existe');return; }
+    const c=leerRankCache();
+    box.innerHTML=c?rankingHTML(g,c.datos,c.ts,false):`<div class="grupo"><div class="grupo-tit">${esc(g.grupoNombre)}</div><div class="grupo-err">${esc(e.message)}</div><button class="btn ghost" onclick="pintarGrupo()">Reintentar</button></div>`;
+  }
+}
+function rankingHTML(g,d,ts,fresco){
+  const ps=d.personas||[];
+  const filas=ps.map((p,i)=>{
+    const pos=i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span class="rk-num">${i+1}</span>`;
+    const sub=[p.dias_semana>=3?'✅ semana cumplida':`${p.dias_semana} de 3 esta semana`];
+    if(p.racha>=2)sub.push(`🔥 ${p.racha} seguidos`);
+    return `<div class="rk-row ${p.es_yo?'yo':''}"><div class="rk-pos">${pos}</div><div class="rk-av">${esc(p.avatar)}</div><div class="rk-info"><div class="rk-nom">${esc(p.nombre)}${p.es_yo?' <span class="rk-tu">tú</span>':''}</div><div class="rk-sub">${sub.join(' · ')}</div></div><div class="rk-dias"><b>${p.dias28}</b><span>días de 28</span></div></div>`;
+  }).join('');
+  const cuando=new Date(ts).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const aviso=fresco?'':`<div class="rk-aviso">Sin conexión · datos del ${cuando}</div>`;
+  return `<div class="grupo">
+    <div class="grupo-head"><div><div class="grupo-tit">${esc(d.grupo_nombre||g.grupoNombre)}</div><div class="grupo-cod">Código: <b>${esc(d.codigo||g.codigo)}</b></div></div><button class="grupo-share" onclick="compartirCodigo()">Invitar</button></div>
+    ${aviso}
+    <div class="rk-list">${filas||'<div class="rk-vacio">Todavía no hay nadie más. Comparte el código.</div>'}</div>
+    ${ps.length===1?'<div class="rk-vacio">Aún estás solo en el grupo. Pulsa «Invitar» para pasar el código a tus amigos.</div>':''}
+    <div class="rk-nota">Cuenta <b>un día</b> por cada día que te mueves, hagas lo que hagas, en los últimos 28 días. Con tres días a la semana ya la das por cumplida.</div>
+    <div class="rk-pie"><span>Tu clave personal: <b>${esc(g.clave)}</b> (para usar otro móvil)</span><span><button class="link-suave" onclick="setGrupoModo('editar')">Cambiar nombre</button> · <button class="link-suave" onclick="salirGrupo()">Salir del grupo</button></span></div>
+  </div>`;
+}
+function compartirCodigo(){
+  const g=getGrupo();if(!g)return;
+  const txt=`Únete a mi grupo «${g.grupoNombre}» en Plenitud 60+. Abre https://plenitud60.netlify.app, entra en Progreso → Mi grupo → «Unirme con un código» y escribe: ${g.codigo}`;
+  if(navigator.share){navigator.share({text:txt}).catch(()=>{});}
+  else if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>toast('Invitación copiada'),()=>prompt('Copia este texto:',txt));}
+  else prompt('Copia este texto:',txt);
+}
+async function salirGrupo(){
+  const g=getGrupo();if(!g)return;
+  if(!confirm('¿Salir del grupo? Tus días registrados en el grupo se borrarán. Tu historial del móvil no se toca.'))return;
+  try{await sbRpc('plenitud_salir',{p_token:g.token});}
+  catch(e){ if(e.message!=='Sesión no válida'){toast(e.message);return;} }
+  setGrupo(null);setCola([]);localStorage.removeItem(KEY_RANK);grupoModo=null;toast('Has salido del grupo');pintarGrupo();
+}
+window.addEventListener('online',()=>{sincronizarDias();});
 
 /* --- Registro y evolución del peso --- */
 function fmtKg(n){return n.toFixed(1).replace('.',',');}
@@ -1552,6 +1734,7 @@ function toast(txt){const t=document.getElementById('toast');document.getElement
 actualizarAlertaPerfil();
 backfillMarcas();
 pintarRutinas();
+if(getGrupo()&&getCola().length)sincronizarDias(); // días pendientes de subir al grupo
 </script>
 </body>
 </html>

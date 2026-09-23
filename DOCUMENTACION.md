@@ -3,7 +3,9 @@
 Aplicación web (una sola página, `index.html`) de ejercicio y nutrición pensada para
 personas mayores de 60 años. Funciona como PWA: se puede instalar en el móvil y se usa
 sin conexión. Todos los datos se guardan solo en el teléfono del usuario
-(`localStorage`), no hay servidor.
+(`localStorage`). La única excepción es el **ranking de constancia del grupo** (opcional):
+si la persona se une a un grupo, la app envía a Supabase qué días se ha movido (solo la
+fecha, nada más). Ver la sección «Ranking del grupo: servidor (Supabase)».
 
 Este documento recoge **qué hace la app y todos los cambios que vamos haciendo**.
 Se actualiza en cada cambio.
@@ -41,7 +43,8 @@ Se actualiza en cada cambio.
    que alterna la clase `open` del `.acc` (mismo estilo que los acordeones de Nutrición).
 2. **Ejercicios** — catálogo de ejercicios por categoría (Fuerza, Cardio, Equilibrio,
    Flexibilidad) con su ficha de detalle.
-3. **Progreso** — sesiones, racha, objetivos OMS e historial.
+3. **Progreso** — sesiones, racha, objetivos OMS, ranking de constancia del grupo,
+   logros, marcas, peso e historial.
 4. **Nutrición** — guía vegetariana y calculadora de proteína/IMC.
 5. **Perfil** — altura, peso, molestias/condiciones y recordatorios en el calendario.
 
@@ -228,6 +231,46 @@ fija y no hay una marca real que superar.
   `pasoMarca()`, `mStepper()`, `mAdj()`, `finalizarReps()` (reps), `avanzarTiempo()` (guarda
   el aguante), `pintarMarcas()`, `miniGrafica()`.
 
+### 2026-09-23
+
+**14. Ranking de constancia del grupo de amigos («Mi grupo · constancia»)**
+Ranking compartido entre amigos que premia **solo la constancia**, nunca la intensidad:
+cuenta **un punto por cada día en que la persona se mueve**, haga lo que haga (una rutina
+o cinco cuentan igual). No se comparan cargas ni repeticiones («cada uno con su cuerpo»).
+- **Qué se muestra** (tarjeta en Progreso, encima de Logros): lista ordenada por **días
+  activos en los últimos 28 días** (ventana móvil de 4 semanas; quien empieza tarde o
+  vuelve tras un parón puede alcanzar al resto en un mes). Desempate por **racha actual**
+  (días seguidos hasta hoy o ayer) y por días de esta semana. Cada fila: medalla o
+  posición, avatar, nombre, «✅ semana cumplida» si lleva 3 o más días desde el lunes (si
+  no, «N de 3 esta semana»), «🔥 N seguidos» si la racha es de 2 o más, y el número grande
+  de días de 28. La fila propia va resaltada con la etiqueta «tú».
+- **Acceso sin contraseña**, pensado para mayores de 60: se **crea un grupo** (sale un
+  **código de 6 caracteres**, sin letras confusas como O/0 o I/1) o se **entra con un
+  código** que te pasa un amigo, indicando nombre y avatar (12 emojis a elegir). El móvil
+  guarda un **token secreto** que identifica a la persona. Cada uno tiene además una
+  **clave personal de 6 caracteres** (se ve al pie de la tarjeta) para recuperar su cuenta
+  en otro móvil: «Ya estaba en un grupo (he cambiado de móvil)».
+- Botón **«Invitar»**: comparte (o copia) un texto con el enlace de la app y el código.
+  Enlaces **«Cambiar nombre»** (nombre y avatar) y **«Salir del grupo»** (borra a la
+  persona y sus días del servidor; el historial del móvil no se toca; si el grupo se queda
+  vacío, se borra).
+- **Sincronización:** al registrar cualquier sesión (`registrar()`), si se está en un
+  grupo, la fecha de hoy se apunta en una **cola** local y se sube. Si no hay conexión, se
+  queda en la cola y se reintenta al abrir la app, al volver la conexión (evento `online`)
+  y al abrir Progreso. Al unirse a un grupo se suben de golpe **todos los días del
+  historial** que ya había en el móvil, para que el ranking arranque con datos reales.
+  Repetir una fecha no suma (clave primaria persona+fecha en el servidor).
+- **Sin conexión** la tarjeta muestra el último ranking guardado (`plenitud60_ranking`)
+  con un aviso «Sin conexión · datos del …». Si el servidor responde «Sesión no válida»
+  (la persona fue borrada), la app olvida el grupo y vuelve a la pantalla de unirse.
+- Código en `index.html`: constantes `SB_URL`, `SB_KEY` (clave *publishable* de Supabase,
+  es pública por diseño), `AVATARES`; `sbRpc()` (llama a las funciones del servidor con
+  `fetch`, sin librerías); `getGrupo()`/`setGrupo()`, `fechaISO()`, `getCola()`/`setCola()`/
+  `encolarDias()`/`sincronizarDias()`, `diasDelHistorial()`; interfaz: `pintarGrupo()`,
+  `introGrupo()`, `formGrupo()`, `enviarGrupo()`, `cargarRanking()`, `rankingHTML()`,
+  `compartirCodigo()`, `salirGrupo()`, `avataresHTML()`/`elegirAvatar()`/`avatarElegido()`,
+  `esc()` (escapa HTML de nombres ajenos).
+
 ---
 
 ## Datos guardados en el teléfono (localStorage)
@@ -242,6 +285,48 @@ fija y no hay una marca real que superar.
 | `plenitud60_pesos` | Histórico de peso (para ver la evolución). |
 | `plenitud60_marcas` | Marcas personales por ejercicio (repeticiones, para superarse). |
 | `plenitud60_voz` | Si la voz que anuncia los ejercicios está activada. |
+| `plenitud60_grupo` | Grupo del ranking: token secreto, clave personal, código, nombre del grupo, nombre y avatar. |
+| `plenitud60_cola_dias` | Fechas (AAAA-MM-DD) pendientes de subir al grupo (se vacía al sincronizar). |
+| `plenitud60_ranking` | Último ranking recibido y cuándo (para mostrarlo sin conexión). |
+
+---
+
+## Ranking del grupo: servidor (Supabase)
+
+- **Proyecto Supabase:** «Registro de Documentos» (`ogpahgldmeeltqdttkjk`, región
+  eu-west-1), reutilizado para no pagar otro proyecto. Todo lo de Plenitud va en el
+  **esquema `plenitud`**, separado de las tablas de ese proyecto. URL de la API:
+  `https://ogpahgldmeeltqdttkjk.supabase.co`.
+- **Tablas** (esquema `plenitud`, **no expuesto** por la API y con RLS activado sin
+  políticas: nadie puede leerlas ni escribirlas directamente):
+  - `grupos` (`codigo` PK, `nombre`, `creado`).
+  - `personas` (`id`, `grupo_codigo`, `nombre`, `avatar`, `token` único, `clave` única,
+    `creado`). Al borrar un grupo se borran sus personas.
+  - `dias_activos` (`persona_id`, `fecha`; PK conjunta → una fecha no se repite). Al borrar
+    una persona se borran sus días.
+- **Funciones de la API** (esquema `public`, `security definer`, ejecutables por `anon`).
+  Son la única puerta de entrada; la app las llama por `POST
+  /rest/v1/rpc/<nombre>` con la clave *publishable* en las cabeceras `apikey` y
+  `Authorization: Bearer`:
+  - `plenitud_crear_grupo(p_nombre_grupo, p_nombre, p_avatar)` → código, nombre del grupo,
+    token y clave.
+  - `plenitud_unirse(p_codigo, p_nombre, p_avatar)` → lo mismo. El código se normaliza
+    (mayúsculas, sin guiones ni espacios). Máximo 30 personas por grupo.
+  - `plenitud_recuperar(p_clave)` → token, nombre, avatar y grupo (cambio de móvil).
+  - `plenitud_editar(p_token, p_nombre, p_avatar)`.
+  - `plenitud_salir(p_token)` → borra a la persona (y el grupo si queda vacío).
+  - `plenitud_subir_dias(p_token, p_fechas date[])` → inserta las fechas que falten
+    (ignora fechas futuras o de hace más de 2 años).
+  - `plenitud_ranking(p_token, p_hoy)` → JSON con `codigo`, `grupo_nombre` y `personas`
+    (`nombre`, `avatar`, `es_yo`, `dias28`, `dias_semana`, `racha`, `dias_total`), ya
+    ordenadas. La fecha «hoy» la manda el móvil (`p_hoy`) para que la semana y la racha
+    se calculen con su zona horaria.
+  - Auxiliares internas en `plenitud`: `codigo_aleatorio(n)`, `normalizar_codigo(t)`,
+    `alta_persona(...)`.
+- La migración se llama `plenitud_ranking_constancia` (visible en Supabase → Database →
+  Migrations). Para probar desde fuera basta `curl` con esas cabeceras.
+- **Privacidad:** al servidor solo llegan nombre, avatar y fechas de los días activos.
+  Ni ejercicios, ni repeticiones, ni peso, ni perfil.
 
 ---
 
