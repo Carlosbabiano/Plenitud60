@@ -253,6 +253,9 @@
   .rk-pie{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);}
   .rk-pie .link-suave{margin:0;padding:4px 0;font-size:13px;display:inline;}
   .rk-pie b{letter-spacing:1px;color:var(--ink);}
+  .pgrupo{margin:6px auto 14px;max-width:420px;border-radius:12px;padding:10px 14px;font-size:14.5px;font-weight:600;line-height:1.4;}
+  .pgrupo.si{background:var(--primary-l);color:var(--primary-d);border:1px solid #cfe4df;}
+  .pgrupo.no{background:var(--fuerza-l);color:var(--fuerza);font-weight:500;}
   .marca{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:12px;}
   .marca-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
   .marca-nom{font-size:16px;font-weight:700;color:var(--ink);}
@@ -873,10 +876,7 @@ const NUTRI=[
 const KEY='plenitud60_historial', KEYP='plenitud60_perfil';
 const read=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}};
 const saveH=a=>localStorage.setItem(KEY,JSON.stringify(a));
-function registrar(ej){const h=read();h.push({id:ej.id,nombre:ej.nombre,cat:ej.cat,fecha:new Date().toISOString()});saveH(h);
-  // Si está en un grupo, apunta el día de hoy para el ranking de constancia (se sube cuando haya conexión).
-  if(getGrupo()){encolarDias([fechaISO(new Date())]);sincronizarDias();}
-}
+function registrar(ej){const h=read();h.push({id:ej.id,nombre:ej.nombre,cat:ej.cat,fecha:new Date().toISOString()});saveH(h);}
 const hoyStr=()=>new Date().toDateString();
 const hechosHoy=()=>read().filter(x=>new Date(x.fecha).toDateString()===hoyStr()).map(x=>x.id);
 function getPerfil(){try{return Object.assign({altura:'',peso:'',condiciones:[],equipo:null},JSON.parse(localStorage.getItem(KEYP))||{})}catch(e){return{altura:'',peso:'',condiciones:[],equipo:null}}}
@@ -1186,6 +1186,27 @@ function getCola(){try{const a=JSON.parse(localStorage.getItem(KEY_COLA));return
 function setCola(a){localStorage.setItem(KEY_COLA,JSON.stringify(a));}
 function encolarDias(fechas){const c=getCola();fechas.forEach(f=>{if(!c.includes(f))c.push(f);});setCola(c);}
 function diasDelHistorial(){return [...new Set(read().map(x=>fechaISO(x.fecha)))];}
+/* Reglas anti-trampas: para el grupo solo cuentan las RUTINAS completadas en el reproductor
+   (no el botón «Marcar como realizado» ni los ejercicios sueltos), y solo si ha pasado de
+   verdad al menos el 70 % del tiempo previsto de la rutina según el reloj. Los días válidos
+   se apuntan en KEY_DIAS_GRUPO. Los días del historial anteriores a la primera vez que se
+   abrió esta versión (KEY_DESDE) se aceptan tal cual, porque no había regla todavía. */
+const KEY_DIAS_GRUPO='plenitud60_dias_grupo', KEY_DESDE='plenitud60_grupo_desde', MIN_TIEMPO_GRUPO=0.7;
+function getDiasGrupo(){try{const a=JSON.parse(localStorage.getItem(KEY_DIAS_GRUPO));return Array.isArray(a)?a:[];}catch(e){return[];}}
+function diasParaGrupo(){
+  const desde=localStorage.getItem(KEY_DESDE)||fechaISO(new Date());
+  return [...new Set(diasDelHistorial().filter(f=>f<desde).concat(getDiasGrupo()))];
+}
+function contarDiaGrupo(segPrevistos){
+  if(!getGrupo())return '';
+  if(!RP.rutina)return `<div class="pgrupo no">👥 Los ejercicios sueltos no cuentan para el grupo. Para sumar el día, completa una rutina.</div>`;
+  const previsto=segPrevistos+(RP.steps.length-1)*15, real=(Date.now()-(RP.inicio||Date.now()))/1000;
+  if(real<previsto*MIN_TIEMPO_GRUPO)return `<div class="pgrupo no">👥 Demasiado rápido para contar en el grupo: hacen falta al menos ${Math.ceil(previsto*MIN_TIEMPO_GRUPO/60)} min de rutina.</div>`;
+  const hoy=fechaISO(new Date()), dias=getDiasGrupo();
+  if(!dias.includes(hoy)){dias.push(hoy);localStorage.setItem(KEY_DIAS_GRUPO,JSON.stringify(dias));}
+  encolarDias([hoy]);sincronizarDias();
+  return `<div class="pgrupo si">👥 Día sumado a tu grupo. ¡Constancia!</div>`;
+}
 /* Sube al grupo los días pendientes. Si falla (sin conexión), quedan en cola para la próxima vez. */
 let sincronizando=false;
 async function sincronizarDias(){
@@ -1198,13 +1219,14 @@ async function sincronizarDias(){
 }
 function leerRankCache(){try{const c=JSON.parse(localStorage.getItem(KEY_RANK));return(c&&c.datos)?c:null;}catch(e){return null;}}
 
-let grupoModo=null; // null | 'crear' | 'unirme' | 'recuperar' | 'editar'
+let grupoModo=null; // null | 'crear' | 'unirme' | 'recuperar' | 'editar' | 'grupo'
+const MODOS_DENTRO=['editar','grupo']; // formularios que solo tienen sentido estando ya en un grupo
 function setGrupoModo(m){grupoModo=m;pintarGrupo();}
 function pintarGrupo(){
   const box=document.getElementById('grupoCard'); if(!box)return;
   const g=getGrupo();
-  if(!g){ box.innerHTML=(grupoModo&&grupoModo!=='editar')?formGrupo(grupoModo):introGrupo(); return; }
-  if(grupoModo==='editar'){ box.innerHTML=formGrupo('editar'); return; }
+  if(!g){ box.innerHTML=(grupoModo&&!MODOS_DENTRO.includes(grupoModo))?formGrupo(grupoModo):introGrupo(); return; }
+  if(MODOS_DENTRO.includes(grupoModo)){ box.innerHTML=formGrupo(grupoModo); return; }
   const c=leerRankCache();
   box.innerHTML=c?rankingHTML(g,c.datos,c.ts,false):`<div class="grupo"><div class="grupo-cargando">Cargando el ranking de «${esc(g.grupoNombre)}»…</div></div>`;
   cargarRanking();
@@ -1222,10 +1244,12 @@ function elegirAvatar(b){document.querySelectorAll('#avPick .av').forEach(x=>x.c
 function avatarElegido(){const b=document.querySelector('#avPick .av.on');return b?b.textContent:AVATARES[0];}
 function formGrupo(m){
   const g=getGrupo()||{};
-  const TIT={crear:'Crear un grupo',unirme:'Unirme a un grupo',recuperar:'Recuperar mi cuenta',editar:'Cambiar mi nombre o avatar'};
-  const BTN={crear:'Crear grupo',unirme:'Unirme',recuperar:'Recuperar',editar:'Guardar'};
+  const TIT={crear:'Crear un grupo',unirme:'Unirme a un grupo',recuperar:'Recuperar mi cuenta',editar:'Cambiar mi nombre o avatar',grupo:'Cambiar el nombre del grupo'};
+  const BTN={crear:'Crear grupo',unirme:'Unirme',recuperar:'Recuperar',editar:'Guardar',grupo:'Guardar'};
   let campos='';
-  if(m==='recuperar'){
+  if(m==='grupo'){
+    campos=`<div class="field"><label>Nombre del grupo</label><input id="gGrupo" placeholder="Ej. Amigos del parque" maxlength="40" value="${esc(g.grupoNombre||'')}"><div class="hint">Lo verán todos los del grupo.</div></div>`;
+  }else if(m==='recuperar'){
     campos=`<div class="field"><label>Tu clave personal</label><input id="gClave" placeholder="Ej. 387G6W" autocapitalize="characters" autocomplete="off" maxlength="8"><div class="hint">Son 6 letras y números. La verás al final de la tarjeta del grupo en tu otro móvil.</div></div>`;
   }else{
     if(m==='crear')campos+=`<div class="field"><label>Nombre del grupo</label><input id="gGrupo" placeholder="Ej. Amigos del parque" maxlength="40"></div>`;
@@ -1244,6 +1268,7 @@ async function enviarGrupo(m){
   err.textContent='';btn.disabled=true;btn.textContent='Un momento…';
   try{
     let r, nombre=v('gNombre'), avatar=avatarElegido();
+    if(m==='grupo'){ if(!v('gGrupo'))throw new Error('Escribe el nombre del grupo'); const g=getGrupo(); r=await sbRpc('plenitud_renombrar_grupo',{p_token:g.token,p_nombre:v('gGrupo')}); setGrupo(Object.assign(g,{grupoNombre:r.grupo_nombre})); localStorage.removeItem(KEY_RANK); grupoModo=null; toast('Nombre del grupo cambiado'); pintarGrupo(); return; }
     if(m!=='recuperar'&&!nombre)throw new Error('Escribe tu nombre');
     if(m==='crear'){ if(!v('gGrupo'))throw new Error('Ponle un nombre al grupo'); r=await sbRpc('plenitud_crear_grupo',{p_nombre_grupo:v('gGrupo'),p_nombre:nombre,p_avatar:avatar}); }
     else if(m==='unirme'){ if(!v('gCodigo'))throw new Error('Escribe el código del grupo'); r=await sbRpc('plenitud_unirse',{p_codigo:v('gCodigo'),p_nombre:nombre,p_avatar:avatar}); }
@@ -1251,7 +1276,7 @@ async function enviarGrupo(m){
     else { const g=getGrupo(); r=await sbRpc('plenitud_editar',{p_token:g.token,p_nombre:nombre,p_avatar:avatar}); setGrupo(Object.assign(g,{nombre:r.nombre,avatar:r.avatar})); localStorage.removeItem(KEY_RANK); grupoModo=null; toast('Guardado'); pintarGrupo(); return; }
     setGrupo({token:r.token,clave:r.clave,codigo:r.codigo,grupoNombre:r.grupo_nombre,nombre,avatar});
     localStorage.removeItem(KEY_RANK);
-    encolarDias(diasDelHistorial()); // sube al grupo los días que ya llevaba hechos en este móvil
+    encolarDias(diasParaGrupo()); // sube al grupo los días válidos que ya llevaba hechos en este móvil
     grupoModo=null;
     toast(m==='crear'?'Grupo creado':'¡Ya estás en el grupo!');
     pintarGrupo();
@@ -1287,8 +1312,8 @@ function rankingHTML(g,d,ts,fresco){
     ${aviso}
     <div class="rk-list">${filas||'<div class="rk-vacio">Todavía no hay nadie más. Comparte el código.</div>'}</div>
     ${ps.length===1?'<div class="rk-vacio">Aún estás solo en el grupo. Pulsa «Invitar» para pasar el código a tus amigos.</div>':''}
-    <div class="rk-nota">Cuenta <b>un día</b> por cada día que te mueves, hagas lo que hagas, en los últimos 28 días. Con tres días a la semana ya la das por cumplida.</div>
-    <div class="rk-pie"><span>Tu clave personal: <b>${esc(g.clave)}</b> (para usar otro móvil)</span><span><button class="link-suave" onclick="setGrupoModo('editar')">Cambiar nombre</button> · <button class="link-suave" onclick="salirGrupo()">Salir del grupo</button></span></div>
+    <div class="rk-nota">Cuenta <b>un día</b> por cada día que completas una <b>rutina</b> en el reproductor, en los últimos 28 días. Con tres días a la semana ya la das por cumplida. Es para animaros entre amigos, no para competir: aquí gana quien no lo deja.</div>
+    <div class="rk-pie"><span>Tu clave personal: <b>${esc(g.clave)}</b> (para usar otro móvil)</span><span><button class="link-suave" onclick="setGrupoModo('editar')">Mi nombre</button> · <button class="link-suave" onclick="setGrupoModo('grupo')">Nombre del grupo</button> · <button class="link-suave" onclick="salirGrupo()">Salir</button></span></div>
   </div>`;
 }
 function compartirCodigo(){
@@ -1460,7 +1485,7 @@ function guardarSesion(){
     localStorage.setItem(KEY_SESION,JSON.stringify({
       titulo:RP.titulo, pasos:RP.steps.map(p=>({id:p.ej.id,d:p.d,sustituyeA:p.sustituyeA||null})),
       i:RP.i, phase:RP.phase, t:RP.t, serie:RP.serie, seriesTotal:RP.seriesTotal,
-      lado:RP.lado, doneIds:RP.doneIds, paused:RP.paused
+      lado:RP.lado, doneIds:RP.doneIds, paused:RP.paused, rutina:!!RP.rutina, inicio:RP.inicio||null
     }));
   }catch(e){}
 }
@@ -1472,7 +1497,7 @@ function reanudarSesion(){
   if(!steps.length){borrarSesion();pintarRutinas();return;}
   RP={steps, i:Math.min(s.i||0,steps.length-1), t:s.t||steps[0].d, timer:null, paused:!!s.paused,
       titulo:s.titulo||'Sesión', doneIds:s.doneIds||[], phase:s.phase==='run'?'run':'intro',
-      serie:s.serie||1, seriesTotal:s.seriesTotal||1, lado:s.lado||0};
+      serie:s.serie||1, seriesTotal:s.seriesTotal||1, lado:s.lado||0, rutina:!!s.rutina, inicio:s.inicio||Date.now()};
   try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}
   document.getElementById('player').classList.add('on');
   pedirWakeLock();
@@ -1521,14 +1546,14 @@ function iniciarRutina(id){
   const rut=ROUTINES.find(r=>r.id===id);
   const {steps,quitados,sustituidos}=construirPasos(rut);
   if(!steps.length){alert('Todos los ejercicios de esta rutina están desaconsejados por tu perfil. Prueba otra o revisa tu perfil.');return;}
-  RP={steps,i:0,t:steps[0].d,timer:null,paused:false,titulo:rut.nombre,doneIds:[],phase:'intro'};
+  RP={steps,i:0,t:steps[0].d,timer:null,paused:false,titulo:rut.nombre,doneIds:[],phase:'intro',rutina:true,inicio:Date.now()};
   arrancarPlayer();
   const adaptados=quitados+sustituidos;
   if(adaptados) setTimeout(()=>toast('Rutina adaptada a tu perfil y equipo'),400);
 }
 function iniciarUno(id){
   const ej=EJERCICIOS.find(e=>e.id===id);
-  RP={steps:[{ej,d:ej.tiempo||40}],i:0,t:ej.tiempo||40,timer:null,paused:false,titulo:ej.nombre,doneIds:[],phase:'intro'};
+  RP={steps:[{ej,d:ej.tiempo||40}],i:0,t:ej.tiempo||40,timer:null,paused:false,titulo:ej.nombre,doneIds:[],phase:'intro',rutina:false,inicio:Date.now()};
   arrancarPlayer();
 }
 /* ---- Mantener la pantalla encendida durante los ejercicios (Wake Lock) ----
@@ -1704,10 +1729,12 @@ function pFinish(){
   const seg=RP.steps.reduce((s,p)=>s+(p.d||0),0), minutos=Math.max(1,Math.round(seg/60));
   const peso=parseFloat(getPerfil().peso)||70, kcal=Math.round(minutos*peso*0.06);
   const btnSalud=esIOS()?`<a class="bp salud" href="${urlSalud(RP.titulo,minutos,kcal)}">❤️ Guardar en Salud</a>`:'';
+  const grupoMsg=contarDiaGrupo(seg);
   const el=document.getElementById('player');el.classList.remove('rest');
   el.innerHTML=`<div class="pbody" style="margin:auto;text-align:center">
     <div style="font-size:64px">🎉</div><h2 style="font-size:26px">¡Sesión completada!</h2>
     <p class="pguide" style="font-size:16px">Has realizado <b>${done.length}</b> ejercicio${done.length!==1?'s':''} · ~${minutos} min. ¡Buen trabajo!</p>
+    ${grupoMsg}
     ${btnSalud}
     <button class="bp" onclick="pClose();go('progreso')">Ver mi progreso</button>
     <div class="prow"><button onclick="pClose()">Cerrar</button></div></div>`;
@@ -1734,6 +1761,7 @@ function toast(txt){const t=document.getElementById('toast');document.getElement
 actualizarAlertaPerfil();
 backfillMarcas();
 pintarRutinas();
+if(!localStorage.getItem(KEY_DESDE))localStorage.setItem(KEY_DESDE,fechaISO(new Date())); // desde cuándo rigen las reglas del grupo
 if(getGrupo()&&getCola().length)sincronizarDias(); // días pendientes de subir al grupo
 </script>
 </body>

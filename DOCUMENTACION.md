@@ -251,14 +251,28 @@ o cinco cuentan igual). No se comparan cargas ni repeticiones («cada uno con su
   **clave personal de 6 caracteres** (se ve al pie de la tarjeta) para recuperar su cuenta
   en otro móvil: «Ya estaba en un grupo (he cambiado de móvil)».
 - Botón **«Invitar»**: comparte (o copia) un texto con el enlace de la app y el código.
-  Enlaces **«Cambiar nombre»** (nombre y avatar) y **«Salir del grupo»** (borra a la
-  persona y sus días del servidor; el historial del móvil no se toca; si el grupo se queda
-  vacío, se borra).
-- **Sincronización:** al registrar cualquier sesión (`registrar()`), si se está en un
-  grupo, la fecha de hoy se apunta en una **cola** local y se sube. Si no hay conexión, se
-  queda en la cola y se reintenta al abrir la app, al volver la conexión (evento `online`)
-  y al abrir Progreso. Al unirse a un grupo se suben de golpe **todos los días del
-  historial** que ya había en el móvil, para que el ranking arranque con datos reales.
+  Enlaces al pie: **«Mi nombre»** (nombre y avatar), **«Nombre del grupo»** (cualquiera
+  del grupo puede cambiarlo; lo ven todos) y **«Salir»** (borra a la persona y sus días del
+  servidor; el historial del móvil no se toca; si el grupo se queda vacío, se borra).
+- **Reglas anti-trampas (qué cuenta como día para el grupo):**
+  1. Solo cuentan las **rutinas completadas en el reproductor** (pantalla «¡Sesión
+     completada!»). El botón **«Marcar como realizado»** de la ficha de un ejercicio y los
+     **ejercicios sueltos** hechos en el reproductor siguen valiendo para el historial,
+     logros y marcas personales, pero **no suman día en el ranking**.
+  2. Debe haber pasado **de verdad al menos el 70 %** del tiempo previsto de la rutina
+     (según el reloj, desde que se pulsó «Empezar» hasta terminar; `MIN_TIEMPO_GRUPO`).
+     Pulsar «siguiente» a toda prisa no vale. Si se cierra la app a medias y se reanuda, se
+     conserva la hora de inicio (`RP.inicio` va en `plenitud60_sesion`).
+  La pantalla final lo dice claramente: «👥 Día sumado a tu grupo», «Demasiado rápido para
+  contar en el grupo: hacen falta al menos N min» o «Los ejercicios sueltos no cuentan
+  para el grupo». La tarjeta del ranking recuerda que es para animarse, no para competir.
+- **Sincronización:** al terminar una rutina válida (`contarDiaGrupo()` desde
+  `pFinish()`), la fecha de hoy se apunta en `plenitud60_dias_grupo` y en una **cola**
+  local, y se sube. Si no hay conexión, se queda en la cola y se reintenta al abrir la app,
+  al volver la conexión (evento `online`) y al abrir Progreso. Al unirse a un grupo se
+  suben de golpe los días válidos (`diasParaGrupo()`): los de `plenitud60_dias_grupo` más
+  los del historial **anteriores** al día en que se abrió por primera vez esta versión
+  (`plenitud60_grupo_desde`), que se aceptan tal cual porque entonces no había regla.
   Repetir una fecha no suma (clave primaria persona+fecha en el servidor).
 - **Sin conexión** la tarjeta muestra el último ranking guardado (`plenitud60_ranking`)
   con un aviso «Sin conexión · datos del …». Si el servidor responde «Sesión no válida»
@@ -266,7 +280,8 @@ o cinco cuentan igual). No se comparan cargas ni repeticiones («cada uno con su
 - Código en `index.html`: constantes `SB_URL`, `SB_KEY` (clave *publishable* de Supabase,
   es pública por diseño), `AVATARES`; `sbRpc()` (llama a las funciones del servidor con
   `fetch`, sin librerías); `getGrupo()`/`setGrupo()`, `fechaISO()`, `getCola()`/`setCola()`/
-  `encolarDias()`/`sincronizarDias()`, `diasDelHistorial()`; interfaz: `pintarGrupo()`,
+  `encolarDias()`/`sincronizarDias()`, `diasDelHistorial()`, `getDiasGrupo()`,
+  `diasParaGrupo()`, `contarDiaGrupo()`; interfaz: `pintarGrupo()`,
   `introGrupo()`, `formGrupo()`, `enviarGrupo()`, `cargarRanking()`, `rankingHTML()`,
   `compartirCodigo()`, `salirGrupo()`, `avataresHTML()`/`elegirAvatar()`/`avatarElegido()`,
   `esc()` (escapa HTML de nombres ajenos).
@@ -288,6 +303,8 @@ o cinco cuentan igual). No se comparan cargas ni repeticiones («cada uno con su
 | `plenitud60_grupo` | Grupo del ranking: token secreto, clave personal, código, nombre del grupo, nombre y avatar. |
 | `plenitud60_cola_dias` | Fechas (AAAA-MM-DD) pendientes de subir al grupo (se vacía al sincronizar). |
 | `plenitud60_ranking` | Último ranking recibido y cuándo (para mostrarlo sin conexión). |
+| `plenitud60_dias_grupo` | Días que cuentan para el grupo (rutinas completas con tiempo real). |
+| `plenitud60_grupo_desde` | Fecha en que se abrió por primera vez la versión con reglas del grupo. |
 
 ---
 
@@ -314,6 +331,8 @@ o cinco cuentan igual). No se comparan cargas ni repeticiones («cada uno con su
     (mayúsculas, sin guiones ni espacios). Máximo 30 personas por grupo.
   - `plenitud_recuperar(p_clave)` → token, nombre, avatar y grupo (cambio de móvil).
   - `plenitud_editar(p_token, p_nombre, p_avatar)`.
+  - `plenitud_renombrar_grupo(p_token, p_nombre)` → cambia el nombre del grupo de la
+    persona (migración `plenitud_renombrar_grupo`).
   - `plenitud_salir(p_token)` → borra a la persona (y el grupo si queda vacío).
   - `plenitud_subir_dias(p_token, p_fechas date[])` → inserta las fechas que falten
     (ignora fechas futuras o de hace más de 2 años).
